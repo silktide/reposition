@@ -4,6 +4,7 @@
  */
 namespace Silktide\Reposition\Hydrator;
 use Silktide\Reposition\Exception\HydrationException;
+use Silktide\Reposition\Normaliser\NormaliserInterface;
 
 /**
  *
@@ -12,12 +13,17 @@ class ClayHydrator implements HydratorInterface
 {
 
     /**
+     * @var NormaliserInterface
+     */
+    protected $normaliser;
+
+    /**
      * {@inheritDoc}
      */
     public function hydrate(array $data, $entityClass, array $options = [])
     {
         $this->checkClass($entityClass);
-        return new $entityClass($data);
+        return$this->doHydrate($data, $entityClass);
     }
 
     /**
@@ -28,9 +34,30 @@ class ClayHydrator implements HydratorInterface
         $this->checkClass($entityClass);
         $collection = [];
         foreach ($data as $i => $subData) {
-            $collection[$i] = new $entityClass($subData);
+            $collection[$i] = $this->doHydrate($subData, $entityClass);
         }
         return $collection;
+    }
+
+    /**
+     * @param array $data
+     * @param string $class
+     * @return object
+     */
+    protected function doHydrate(array $data, $class)
+    {
+        if ($this->normaliser instanceof NormaliserInterface) {
+            $data = $this->normaliser->denormalise($data);
+        }
+        return new $class($data);
+    }
+
+    /**
+     * @param NormaliserInterface $normaliser
+     */
+    public function setNormaliser(NormaliserInterface $normaliser)
+    {
+        $this->normaliser = $normaliser;
     }
 
     /**
