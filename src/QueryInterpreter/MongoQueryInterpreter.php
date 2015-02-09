@@ -5,6 +5,7 @@
 namespace Silktide\Reposition\QueryInterpreter;
 
 use Silktide\Reposition\Exception\QueryException;
+use Silktide\Reposition\Normaliser\NormaliserInterface;
 use Silktide\Reposition\Query\Query;
 use Silktide\Reposition\Query\FindQuery;
 
@@ -14,6 +15,15 @@ use Silktide\Reposition\Query\FindQuery;
 class MongoQueryInterpreter implements QueryInterpreterInterface
 {
 
+    /**
+     * @var NormaliserInterface
+     */
+    protected $normaliser;
+
+    /**
+     * {@inheritDoc}
+     * @throws \Silktide\Reposition\Exception\QueryException
+     */
     public function interpret(Query $query)
     {
         switch ($query->getAction()) {
@@ -26,14 +36,12 @@ class MongoQueryInterpreter implements QueryInterpreterInterface
         }
     }
 
+    /**
+     * @param FindQuery $query
+     * @return CompiledQuery
+     */
     protected function compileFindQuery(FindQuery $query)
     {
-        $compiled = [
-            "table" => $query->getTable(),
-            "method" => "find",
-            "arguments" => [$query->getFilters()]
-        ];
-
         $calls = [];
         $limit = $query->getLimit();
         if (!empty($limit)) {
@@ -44,10 +52,38 @@ class MongoQueryInterpreter implements QueryInterpreterInterface
             foreach ($sort as $field => $direction) {
                 $sort[$field] = ($direction == Query::SORT_ASCENDING)? 1: -1;
             }
-            $calls[] = ["sort", [$sort]];
+            $calls[] = ["sort", [$this->normalise($sort, ["filter" => "keys"])]];
         }
-        $compiled["calls"] = $calls;
-        return $compiled;
+
+        return new CompiledQuery(
+            $query->getTable(),
+            "find",
+            [
+                $this->normalise($query->getFilters())
+            ],
+            $calls
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setNormaliser(NormaliserInterface $normaliser)
+    {
+        $this->normaliser = $normaliser;
+    }
+
+    /**
+     * @param array $data
+     * @param array $options
+     * @return array
+     */
+    protected function normalise(array $data, array $options = [])
+    {
+        if ($this->normaliser instanceof NormaliserInterface) {
+            return $this->normaliser->normalise($data, $options);
+        }
+        return $data;
     }
 
 } 
