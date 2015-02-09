@@ -16,7 +16,7 @@ use Silktide\Reposition\Query\AggregationQuery;
 interface QueryBuilderInterface
 {
 
-    const PRIMARY_KEY = "'primary_key`";
+    const PRIMARY_KEY = "id";
 
     /**
      * @param string $table

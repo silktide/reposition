@@ -15,7 +15,6 @@ use Silktide\Reposition\Query\UpdateQuery;
  */
 class QueryBuilder implements QueryBuilderInterface
 {
-    protected $primaryKey = "id";
 
     public function findBy($table, array $filters, array $sort = [], $limit = null)
     {
@@ -28,7 +27,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function findById($table, $id)
     {
-        return $this->findBy($table, [$this->primaryKey => $id]);
+        return $this->findBy($table, [self::PRIMARY_KEY => $id]);
     }
 
     public function findFirst($table, array $filters, array $sort = [])
@@ -46,7 +45,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function updateById($table, $id, $values)
     {
-        return $this->updateBy($table, [$this->primaryKey => $id], $values);
+        return $this->updateBy($table, [self::PRIMARY_KEY => $id], $values);
     }
 
     public function insert($table, $values, array $modifiers = [])
@@ -72,7 +71,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $values = $this->parseValues($values);
         if ($this->primaryKeyIsSet($values)) {
-            return $this->updateById($table, $values[$this->primaryKey], $values);
+            return $this->updateById($table, $values[self::PRIMARY_KEY], $values);
         }
         return $this->insert($table, $values, $modifiers);
     }
@@ -86,7 +85,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function deleteById($table, $id)
     {
-        return $this->deleteBy($table, [$this->primaryKey => $id]);
+        return $this->deleteBy($table, [self::PRIMARY_KEY => $id]);
     }
 
     public function aggregate($table, array $operations, array $filters = [], array $modifiers = [])
@@ -106,8 +105,8 @@ class QueryBuilder implements QueryBuilderInterface
     protected function parseKeys(array $filters)
     {
         foreach ($filters as $key => $filter) {
-            if ($key == QueryBuilderInterface::PRIMARY_KEY) {
-                $filters[$this->primaryKey] = $filter;
+            if ($key == self::PRIMARY_KEY) {
+                $filters[self::PRIMARY_KEY] = $filter;
                 unset($filters[$key]);
             }
         }
@@ -117,11 +116,11 @@ class QueryBuilder implements QueryBuilderInterface
     protected function parseValues($values)
     {
         if (is_array($values)) {
-            return $this->parseKeys($values);
+            return $values;
         }
         if (is_object($values)) {
             if (method_exists($values, "toArray")) {
-                return $this->parseKeys($values->toArray());
+                return $values->toArray();
             }
             throw new QueryException("Values object does not implement the 'toArray' method");
         }
@@ -130,6 +129,6 @@ class QueryBuilder implements QueryBuilderInterface
 
     protected function primaryKeyIsSet(array $values)
     {
-        return !empty($values[$this->primaryKey]);
+        return !empty($values[self::PRIMARY_KEY]);
     }
 } 
