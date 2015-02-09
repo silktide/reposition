@@ -1,0 +1,77 @@
+<?php
+/**
+ * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
+ */
+namespace Silktide\Reposition\Repository;
+
+use Silktide\Reposition\Exception\RepositoryException;
+use Silktide\Reposition\Storage\StorageInterface;
+
+/**
+ *
+ */
+class RepositoryManager 
+{
+
+    protected $repositoryNamespaces = [];
+
+    protected $repositoryCache = [];
+
+    protected $defaultStorage;
+
+    public function __construct(StorageInterface $storage, array $repositoryNamespaces, array $repositories = [])
+    {
+        $this->defaultStorage = $storage;
+        $this->repositoryNamespaces = $repositoryNamespaces;
+        $this->repositoryNamespaces[] = ""; // for classes with no namespace
+        foreach ($repositories as $repository) {
+            $this->addRepository($repository);
+        }
+    }
+
+    public function addRepository(RepositoryInterface $repository)
+    {
+        $this->repositoryCache[$repository->getEntityName()] = $repository;
+    }
+
+    public function getRepositoryFor($entity)
+    {
+        if (!is_string($entity)) {
+            if (!is_object($entity)) {
+                throw new RepositoryException("The supplied entity was not a class name or an object instance");
+            }
+            $entity = get_class($entity);
+        } elseif (!class_exists($entity)) {
+            throw new RepositoryException("The supplied entity class '$entity' does not exist");
+        }
+        if (empty($this->repositoryCache[$entity])) {
+            // try to autoload the repository based on entity class name
+
+            // strip the namespace and add "Repository"
+            $entityClass = (strpos($entity, "\\") !== false)
+                ? substr($entity, strrpos($entity, "\\"))
+                : $entity;
+            $repoClass = $entityClass . "Repository";
+
+            // check each registered repository namespace for the repository class
+            foreach ($this->repositoryNamespaces as $namespace) {
+                $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
+                if (class_exists($repoFqcn)) {
+                    $this->repositoryCache[$entity] = new $repoClass(
+                        $entityClass,
+                        $this->defaultStorage->getQueryBuilder(),
+                        $this->defaultStorage
+                    );
+                    break;
+                }
+            }
+
+            // error on no match
+            if (empty($this->repositoryCache[$entity])) {
+                throw new RepositoryException("Could not find a repository for the entity '$entity'");
+            }
+        }
+        return $this->repositoryCache[$entity];
+    }
+
+} 
