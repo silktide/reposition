@@ -48,9 +48,9 @@ class MongoNormaliser implements NormaliserInterface
     }
 
     protected function normaliseKey($key) {
-        if ($key == QueryBuilderInterface::PRIMARY_KEY) {
+        if ($key === QueryBuilderInterface::PRIMARY_KEY) {
             return $this->primary_key;
-        } elseif ($key == $this->primary_key) {
+        } elseif ($key === $this->primary_key) {
             return QueryBuilderInterface::PRIMARY_KEY;
         }
         return $key;
@@ -59,10 +59,10 @@ class MongoNormaliser implements NormaliserInterface
     protected function normaliseValue($key, $value)
     {
         // primary key
-        if ($key == $this->primary_key) {
+        if ($key === $this->primary_key) {
             return new \MongoId($value);
         }
-        if ($key == QueryBuilderInterface::PRIMARY_KEY && $value instanceof \MongoId) {
+        if ($key === QueryBuilderInterface::PRIMARY_KEY && $value instanceof \MongoId) {
             return "" . $value;
         }
 
