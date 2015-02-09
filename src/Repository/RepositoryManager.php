@@ -58,7 +58,7 @@ class RepositoryManager
                 $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
                 if (class_exists($repoFqcn)) {
                     $this->repositoryCache[$entity] = new $repoFqcn(
-                        $entityClass,
+                        $entity,
                         $this->defaultStorage->getQueryBuilder(),
                         $this->defaultStorage
                     );
