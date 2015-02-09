@@ -1,0 +1,58 @@
+{
+  "parameters": {
+    "mongo.server": "",
+    "mongo.db": "",
+    "repository.namespaces": [],
+    "repository.instances": []
+  },
+
+  "services": {
+    "mongo.client": {
+      "class": "\\MongoClient",
+      "arguments": [
+        "%mongo.server%"
+      ]
+    },
+
+    "mongo.db": {
+      "class": "\\MongoDB",
+      "factoryService": "@mongo.client",
+      "factoryMethod": "selectDB",
+      "arguments": [
+        "%mongo.db%"
+      ]
+    },
+
+    "mongo.queryBuilder": {
+      "class": "Silktide\\Reposition\\QueryBuilder\\MongoQueryBuilder"
+    },
+
+    "mongo.interpreter": {
+      "class": "Silktide\\Reposition\\QueryInterpreter\\MongoQueryInterpreter"
+    },
+
+    "clay.hydrator": {
+      "class": "Silktide\\Reposition\\Hydrator\\ClayHydrator"
+    },
+
+    "mongo.storage": {
+      "class": "Silktide\\Reposition\\Storage\\MongoStorage",
+      "arguments": [
+        "@mongo.db",
+        "@mongo.queryBuilder",
+        "@mongo.interpreter",
+        "@clay.hydrator"
+      ]
+    },
+
+    "mongo.repositoryManager": {
+      "class": "Silktide\\Reposition\\Repository\\RepositoryManager",
+      "arguments": [
+        "@mongo.storage",
+        "%repository.namespaces%",
+        "%repository.instances%"
+      ]
+    }
+  }
+
+}
