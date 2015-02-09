@@ -23,8 +23,8 @@
       ]
     },
 
-    "mongo.queryBuilder": {
-      "class": "Silktide\\Reposition\\QueryBuilder\\MongoQueryBuilder"
+    "queryBuilder": {
+      "class": "Silktide\\Reposition\\QueryBuilder\\QueryBuilder"
     },
 
     "mongo.interpreter": {
@@ -35,13 +35,18 @@
       "class": "Silktide\\Reposition\\Hydrator\\ClayHydrator"
     },
 
+    "mongo.normaliser": {
+      "class": "Silktide\\Reposition\\Normaliser\\MongoNormaliser"
+    },
+
     "mongo.storage": {
       "class": "Silktide\\Reposition\\Storage\\MongoStorage",
       "arguments": [
         "@mongo.db",
-        "@mongo.queryBuilder",
+        "@queryBuilder",
         "@mongo.interpreter",
-        "@clay.hydrator"
+        "@clay.hydrator",
+        "@mongo.normaliser"
       ]
     },
 
