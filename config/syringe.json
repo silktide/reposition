@@ -1,7 +1,7 @@
 {
   "parameters": {
     "mongo.server": "",
-    "mongo.db": "",
+    "mongo.dbName": "",
     "repository.namespaces": [],
     "repository.instances": []
   },
@@ -19,7 +19,7 @@
       "factoryService": "@mongo.client",
       "factoryMethod": "selectDB",
       "arguments": [
-        "%mongo.db%"
+        "%mongo.dbName%"
       ]
     },
 
