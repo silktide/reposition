@@ -15,7 +15,7 @@ use Silktide\Reposition\Query\UpdateQuery;
  */
 class QueryBuilder implements QueryBuilderInterface
 {
-    const PRIMARY_KEY = "id";
+    protected $primaryKey = "id";
 
     public function findBy($table, array $filters, array $sort = [], $limit = null)
     {
@@ -28,7 +28,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function findById($table, $id)
     {
-        return $this->findBy($table, [static::PRIMARY_KEY => $id]);
+        return $this->findBy($table, [$this->primaryKey => $id]);
     }
 
     public function findFirst($table, array $filters, array $sort = [])
@@ -46,7 +46,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function updateById($table, $id, $values)
     {
-        return $this->updateBy($table, [static::PRIMARY_KEY => $id], $values);
+        return $this->updateBy($table, [$this->primaryKey => $id], $values);
     }
 
     public function insert($table, $values, array $modifiers = [])
@@ -72,7 +72,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $values = $this->parseValues($values);
         if ($this->primaryKeyIsSet($values)) {
-            return $this->updateById($table, $values[static::PRIMARY_KEY], $values);
+            return $this->updateById($table, $values[$this->primaryKey], $values);
         }
         return $this->insert($table, $values, $modifiers);
     }
@@ -86,7 +86,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function deleteById($table, $id)
     {
-        return $this->deleteBy($table, [static::PRIMARY_KEY => $id]);
+        return $this->deleteBy($table, [$this->primaryKey => $id]);
     }
 
     public function aggregate($table, array $operations, array $filters = [], array $modifiers = [])
@@ -107,7 +107,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         foreach ($filters as $key => $filter) {
             if ($key == QueryBuilderInterface::PRIMARY_KEY) {
-                $filters[static::PRIMARY_KEY] = $filter;
+                $filters[$this->primaryKey] = $filter;
                 unset($filters[$key]);
             }
         }
@@ -130,6 +130,6 @@ class QueryBuilder implements QueryBuilderInterface
 
     protected function primaryKeyIsSet(array $values)
     {
-        return !empty($values[static::PRIMARY_KEY]);
+        return !empty($values[$this->primaryKey]);
     }
 } 

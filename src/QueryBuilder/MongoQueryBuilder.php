@@ -10,6 +10,6 @@ namespace Silktide\Reposition\QueryBuilder;
 class MongoQueryBuilder extends QueryBuilder
 {
 
-    const PRIMARY_KEY = "_id";
+    protected $primaryKey = "_id";
 
 } 
