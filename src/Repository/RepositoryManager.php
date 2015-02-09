@@ -49,7 +49,7 @@ class RepositoryManager
 
             // strip the namespace and add "Repository"
             $entityClass = (strpos($entity, "\\") !== false)
-                ? substr($entity, strrpos($entity, "\\"))
+                ? substr($entity, strrpos($entity, "\\") + 1)
                 : $entity;
             $repoClass = $entityClass . "Repository";
 
@@ -57,7 +57,7 @@ class RepositoryManager
             foreach ($this->repositoryNamespaces as $namespace) {
                 $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
                 if (class_exists($repoFqcn)) {
-                    $this->repositoryCache[$entity] = new $repoClass(
+                    $this->repositoryCache[$entity] = new $repoFqcn(
                         $entityClass,
                         $this->defaultStorage->getQueryBuilder(),
                         $this->defaultStorage
