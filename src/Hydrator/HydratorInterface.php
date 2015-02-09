@@ -3,6 +3,7 @@
  * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
  */
 namespace Silktide\Reposition\Hydrator;
+use Silktide\Reposition\Normaliser\NormaliserInterface;
 
 /**
  *
@@ -25,5 +26,10 @@ interface HydratorInterface
      * @return array
      */
     public function hydrateAll(array $data, $entityClass, array $options = []);
+
+    /**
+     * @param NormaliserInterface $normaliser
+     */
+    public function setNormaliser(NormaliserInterface $normaliser);
 
 } 
