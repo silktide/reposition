@@ -6,8 +6,11 @@ namespace Silktide\Reposition\QueryInterpreter;
 
 use Silktide\Reposition\Exception\QueryException;
 use Silktide\Reposition\Normaliser\NormaliserInterface;
+use Silktide\Reposition\Query\DeleteQuery;
 use Silktide\Reposition\Query\Query;
 use Silktide\Reposition\Query\FindQuery;
+use Silktide\Reposition\Query\InsertQuery;
+use Silktide\Reposition\Query\UpdateQuery;
 
 /**
  *
@@ -30,7 +33,15 @@ class MongoQueryInterpreter implements QueryInterpreterInterface
             case Query::ACTION_FIND:
                 /** @var FindQuery $query */
                 return $this->compileFindQuery($query);
-                break;
+            case Query::ACTION_INSERT:
+                /** @var InsertQuery $query */
+                return $this->compileInsertQuery($query);
+            case Query::ACTION_UPDATE:
+                /** @var UpdateQuery $query */
+                return $this->compileUpdateQuery($query);
+            case Query::ACTION_DELETE:
+                /** @var DeleteQuery $query */
+                return $this->compileDeleteQuery($query);
             default:
                 throw new QueryException("Invalid query action: {$query->getAction()}");
         }
@@ -62,6 +73,41 @@ class MongoQueryInterpreter implements QueryInterpreterInterface
                 $this->normalise($query->getFilters())
             ],
             $calls
+        );
+    }
+
+    protected function compileInsertQuery(InsertQuery $query)
+    {
+        return new CompiledQuery(
+            $query->getTable(),
+            "insert",
+            [
+                $this->normalise($query->getValues())
+            ]
+        );
+    }
+
+    protected function compileUpdateQuery(UpdateQuery $query)
+    {
+        return new CompiledQuery(
+            $query->getTable(),
+            "update",
+            [
+                $this->normalise($query->getFilters()),
+                ["\$set" => $this->normalise($query->getValues())],
+                ["multiple" => true]
+            ]
+        );
+    }
+
+    protected function compileDeleteQuery(DeleteQuery $query)
+    {
+        return new CompiledQuery(
+            $query->getTable(),
+            "remove",
+            [
+                $this->normalise($query->getFilters())
+            ]
         );
     }
 
