@@ -104,12 +104,6 @@ class QueryBuilder implements QueryBuilderInterface
 
     protected function parseKeys(array $filters)
     {
-        foreach ($filters as $key => $filter) {
-            if ($key == self::PRIMARY_KEY) {
-                $filters[self::PRIMARY_KEY] = $filter;
-                unset($filters[$key]);
-            }
-        }
         return $filters;
     }
 
