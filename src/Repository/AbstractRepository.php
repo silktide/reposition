@@ -93,7 +93,7 @@ abstract class AbstractRepository implements RepositoryInterface
             }
             $id = $entity->getId();
         }
-        $query = $this->queryBuilder->updateById($this->tableName, $entity, $id);
+        $query = $this->queryBuilder->updateById($this->tableName, $id, $entity);
         return $this->doQuery($query, false);
     }
 
