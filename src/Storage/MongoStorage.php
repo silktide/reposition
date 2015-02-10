@@ -84,7 +84,10 @@ class MongoStorage implements StorageInterface
 
             if ($this->hydrator instanceof HydratorInterface && !empty($entityClass)) {
                 $response = $this->hydrator->hydrateAll($data, $entityClass);
+            } else  {
+                $response = $data;
             }
+            return $response;
         } elseif (is_array($response) && !empty($response["ok"])) {
             if (!empty($arguments[0]["_id"])) {
                 return "" . $arguments[0]["_id"];
