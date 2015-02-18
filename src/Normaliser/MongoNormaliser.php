@@ -73,7 +73,9 @@ class MongoNormaliser implements NormaliserInterface
         }
         if ($value instanceof \MongoDate) {
             //convert mongo date to DateTime
-            return new \DateTime($value->sec);
+            $dt = new \DateTime();
+            $dt->setTimestamp($value->sec);
+            return $dt;
         }
 
         // normal values
