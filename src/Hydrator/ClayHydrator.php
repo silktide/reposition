@@ -23,7 +23,7 @@ class ClayHydrator implements HydratorInterface
     public function hydrate(array $data, $entityClass, array $options = [])
     {
         $this->checkClass($entityClass);
-        return$this->doHydrate($data, $entityClass);
+        return$this->doHydrate($data, $entityClass, $options);
     }
 
     /**
@@ -34,7 +34,7 @@ class ClayHydrator implements HydratorInterface
         $this->checkClass($entityClass);
         $collection = [];
         foreach ($data as $i => $subData) {
-            $collection[$i] = $this->doHydrate($subData, $entityClass);
+            $collection[$i] = $this->doHydrate($subData, $entityClass, $options);
         }
         return $collection;
     }
@@ -42,12 +42,13 @@ class ClayHydrator implements HydratorInterface
     /**
      * @param array $data
      * @param string $class
+     * @param array $options
      * @return object
      */
-    protected function doHydrate(array $data, $class)
+    protected function doHydrate(array $data, $class, array $options = [])
     {
         if ($this->normaliser instanceof NormaliserInterface) {
-            $data = $this->normaliser->denormalise($data);
+            $data = $this->normaliser->denormalise($data, $options);
         }
         return new $class($data);
     }
