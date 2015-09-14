@@ -23,12 +23,13 @@ interface RepositoryInterface
 
     /**
      * @param array $conditions
+     * @param array $fields
      * @param array $sort
      * @param int $limit
      * @param array $options
      * @return array
      */
-    public function filter(array $conditions, array $sort = [], $limit = 0, array $options = []);
+    public function filter(array $conditions, array $fields = [], array $sort = [], $limit = 0, array $options = []);
 
     /**
      * @param object $entity

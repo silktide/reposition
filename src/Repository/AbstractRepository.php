@@ -67,9 +67,9 @@ abstract class AbstractRepository implements RepositoryInterface
     /**
      * {@inheritDoc}
      */
-    public function filter(array $conditions, array $sort = [], $limit = 0, array $options = [])
+    public function filter(array $conditions, array $fields = [], array $sort = [], $limit = 0, array $options = [])
     {
-        $query = $this->queryBuilder->findBy($this->tableName, $conditions, $sort, $limit);
+        $query = $this->queryBuilder->findBy($this->tableName, $conditions, $fields, $sort, $limit);
         return $this->doQuery($query);
     }
 
