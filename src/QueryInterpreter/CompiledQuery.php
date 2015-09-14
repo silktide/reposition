@@ -30,7 +30,12 @@ class CompiledQuery
      */
     protected $calls = [];
 
-    public function __construct($table, $method, $arguments, $calls = [])
+    /**
+     * @var string
+     */
+    protected $query = "";
+
+    public function __construct($table = "", $method = "", $arguments = [], $calls = [])
     {
         $this->setTable($table);
         $this->setMethod($method);
@@ -118,6 +123,20 @@ class CompiledQuery
         return $this->table;
     }
 
+    /**
+     * @param string $query
+     */
+    public function setQuery($query)
+    {
+        $this->query = $query;
+    }
 
+    /**
+     * @return string
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
 
-} 
+}
