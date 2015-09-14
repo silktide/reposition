@@ -16,9 +16,10 @@ use Silktide\Reposition\Query\UpdateQuery;
 class QueryBuilder implements QueryBuilderInterface
 {
 
-    public function findBy($table, array $filters, array $sort = [], $limit = null)
+    public function findBy($table, array $filters, array $fields = [], array $sort = [], $limit = null)
     {
         $find = new FindQuery($table);
+        $find->setFields($fields);
         $find->setFilters($this->parseKeys($filters));
         $find->setSort($sort);
         $find->setLimit($limit);
@@ -32,7 +33,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function findFirst($table, array $filters, array $sort = [])
     {
-        return $this->findBy($table, $filters, $sort, 1);
+        return $this->findBy($table, $filters, [], $sort, 1);
     }
 
     public function updateBy($table, array $filters, $values)

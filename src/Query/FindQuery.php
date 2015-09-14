@@ -15,6 +15,11 @@ class FindQuery extends Query
     /**
      * @var array
      */
+    protected $fields = [];
+
+    /**
+     * @var array
+     */
     protected $filters = [];
 
     /**
@@ -26,6 +31,22 @@ class FindQuery extends Query
      * @var int
      */
     protected $limit;
+
+    /**
+     * @param array $fields
+     */
+    public function setFields(array $fields)
+    {
+        $this->fields = $fields;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFields()
+    {
+        return $this->fields;
+    }
 
     /**
      * @param array $filters

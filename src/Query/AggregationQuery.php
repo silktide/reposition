@@ -23,7 +23,7 @@ class AggregationQuery extends Query
      */
     public function setOperations(array $operations)
     {
-        $this->operastions = $operations;
+        $this->operations = $operations;
     }
 
     /**

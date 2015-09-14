@@ -21,17 +21,18 @@ interface QueryBuilderInterface
     /**
      * @param string $table
      * @param array $filters
+     * @param array $fields
      * @param array $sort
      * @param int $limit
      * @return FindQuery
      */
-    public function findBy($table, array $filters, array $sort = [], $limit = 0);
+    public function findBy($table, array $filters, array $fields, array $sort = [], $limit = 0);
 
     /**
      * Convenience function wrapping findBy
      *
      * @param string $table
-     * @param string|int $id
+     * @param mixed $id
      * @return FindQuery
      */
     public function findById($table, $id);
@@ -48,7 +49,7 @@ interface QueryBuilderInterface
      * Convenience function wrapping updateBy
      *
      * @param string $table
-     * @param string|int $id
+     * @param mixed $id
      * @param object|array $values
      * @return UpdateQuery
      */
@@ -91,7 +92,7 @@ interface QueryBuilderInterface
      * Convenience function wrapping deleteBy
      *
      * @param string $table
-     * @param string|int $id
+     * @param mixed $id
      * @return mixed
      */
     public function deleteById($table, $id);
