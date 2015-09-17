@@ -1,7 +1,5 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
@@ -60,59 +58,41 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function find($id)
     {
-        $query = $this->queryBuilder->findById($this->tableName, $id);
+        $query = $this->queryBuilder->find($this->tableName)
+            ->where()
+            ->ref(QueryBuilderInterface::PRIMARY_KEY)
+            ->op("=")
+            ->val($id);
         return $this->doQuery($query);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function filter(array $conditions, array $fields = [], array $sort = [], $limit = 0, array $options = [])
+    public function filter(array $filters, array $sort = [], $limit = 0, array $options = [])
     {
-        $query = $this->queryBuilder->findBy($this->tableName, $conditions, $fields, $sort, $limit);
-        return $this->doQuery($query);
-    }
+        $query = $this->queryBuilder->find($this->tableName);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function insert($entity, array $options = [])
-    {
-        $query = $this->queryBuilder->insert($this->tableName, $entity, $options);
-        return $this->doQuery($query, false);
-    }
+        $this->createWhereFromFilters($query, $filters);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function update($entity, $id = 0)
-    {
-        if (empty($id)){
-            if (!method_exists($entity, "getId")) {
-                throw new RepositoryException("Can't update an entity without an ID");
-            }
-            $id = $entity->getId();
+        if (!empty($sort)) {
+            $query->order($sort);
         }
-        $query = $this->queryBuilder->updateById($this->tableName, $id, $entity);
-        return $this->doQuery($query, false);
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function upsert($entity, array $options = [])
-    {
-        $query = $this->queryBuilder->upsert($this->tableName, $entity, $options);
-        return $this->doQuery($query, false);
-    }
+        if (!empty($limit)) {
+            $query->limit($limit);
+        }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function updateBy(array $conditions, array $updateValues)
-    {
-        $query = $this->queryBuilder->updateBy($this->tableName, $conditions, $updateValues);
         return $this->doQuery($query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function save($entity, array $options = [])
+    {
+        $query = $this->queryBuilder->save($this->tableName)->entity($entity);
+        return $this->doQuery($query, false);
     }
 
     /**
@@ -120,34 +100,27 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function delete($id)
     {
-        $query = $this->queryBuilder->deleteById($this->tableName, $id);
+        $query = $this->queryBuilder->delete($this->tableName)
+            ->where()
+            ->ref(QueryBuilderInterface::PRIMARY_KEY)
+            ->op("=")
+            ->val($id);
         return $this->doQuery($query);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function deleteBy(array $conditions)
+    public function count(array $conditions = [], array $groupBy = [])
     {
-        $query = $this->queryBuilder->deleteBy($this->tableName, $conditions);
-        return $this->doQuery($query, false);
-    }
+        $query = $this->queryBuilder->find($this->tableName)->aggregate("count", "*");
 
-    /**
-     * {@inheritDoc}
-     */
-    public function aggregate(array $operations, array $conditions = [], array $options = [])
-    {
-        $query = $this->queryBuilder->aggregate($this->tableName, $operations, $conditions, $options);
-        return $this->doQuery($query, false);
-    }
+        $this->createWhereFromFilters($query, $conditions);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function count(array $conditions = [], array $options = [])
-    {
-        $query = $this->queryBuilder->aggregate($this->tableName, $conditions, $options);
+        if (!empty($groupBy)) {
+            $query->group($groupBy);
+        }
+
         return $this->doQuery($query, false);
     }
 
@@ -156,9 +129,34 @@ abstract class AbstractRepository implements RepositoryInterface
      * @param bool $createEntity
      * @return object|array
      */
-    protected function doQuery(Query $query, $createEntity = true)
+    protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
         return $this->storage->query($query, $createEntity? $this->entityName: "");
+    }
+
+    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true)
+    {
+        if (empty($filters)) {
+            return;
+        }
+
+        if ($startWithWhere) {
+            $query->where();
+        }
+
+        // we need to add "andL" to all but the last field, so
+        // get the values for the last field and remove it from the array
+        end($filters);
+        $lastField = key($filters);
+        $lastValue = array_pop($filters);
+        reset($filters);
+
+        // create filters
+        for ($filters as $field => $value) {
+            $query->ref($field)->op("=")->val($value)->andL();
+        }
+        // filter last field
+        $query->ref($lastField)->op("=")->val($lastValue);
     }
 
 } 
