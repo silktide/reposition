@@ -1,129 +1,161 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\QueryBuilder;
-use Silktide\Reposition\Exception\QueryException;
-use Silktide\Reposition\Query\AggregationQuery;
-use Silktide\Reposition\Query\DeleteQuery;
-use Silktide\Reposition\Query\FindQuery;
-use Silktide\Reposition\Query\InsertQuery;
-use Silktide\Reposition\Query\UpdateQuery;
 
 /**
  *
  */
-class QueryBuilder implements QueryBuilderInterface
+class QueryBuilder extends TokenSequencer
 {
 
-    public function findBy($table, array $filters, array $fields = [], array $sort = [], $limit = null)
+
+
+    ////////// QUERY START METHODS //////////
+
+    /**
+     * SELECT, etc...
+     *
+     * @param $collection
+     *
+     * @return TokenSequencer
+     */
+    public function find($collection)
     {
-        $find = new FindQuery($table);
-        $find->setFields($fields);
-        $find->setFilters($this->parseKeys($filters));
-        $find->setSort($sort);
-        $find->setLimit($limit);
-        return $find;
+        return new TokenSequencer($this->tokenFactory, self::TYPE_FIND, $collection);
     }
 
-    public function findById($table, $id)
+    /**
+     * INSERT, straightforward UPDATE
+     *
+     * @param $collection
+     *
+     * @return TokenSequencer
+     */
+    public function save($collection)
     {
-        return $this->findBy($table, [self::PRIMARY_KEY => $id]);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $collection);
     }
 
-    public function findFirst($table, array $filters, array $sort = [])
+    /**
+     * Mass update e.g. UPDATE field = field + 1 WHERE ...
+     *
+     * @param $collection
+     *
+     * @return TokenSequencer
+     */
+    public function update($collection)
     {
-        return $this->findBy($table, $filters, [], $sort, 1);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_UPDATE, $collection);
     }
 
-    public function updateBy($table, array $filters, $values)
+    /**
+     * @param $collection
+     *
+     * @return TokenSequencer
+     */
+    public function delete($collection)
     {
-        $update = new UpdateQuery($table);
-        $update->setFilters($this->parseKeys($filters));
-        $update->setValues($this->parseValues($values));
-        return $update;
+        return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $collection);
     }
 
-    public function updateById($table, $id, $values)
+    ////////// OVERRIDE TokenSequencer METHODS TO PREVENT INVALID USAGE //////////
+
+    public function getType()
     {
-        return $this->updateBy($table, [self::PRIMARY_KEY => $id], $values);
+        throw new \LogicException("No type has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function insert($table, $values, array $modifiers = [])
+    public function isQuery()
     {
-        $insert = new InsertQuery($table);
-        $values = $this->parseValues($values);
-        if ($this->primaryKeyIsSet($values)) {
-            // TODO: Should we allow primary keys to be inserted?
-            throw new QueryException("Cannot insert a record which has a primary key. Use 'update' instead.");
-        }
-        $insert->setValues($values);
-        $insert->setModifiers($modifiers);
-        return $insert;
+        throw new \LogicException("Cannot check if this is a query. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function replace($table, $values, array $modifiers = [])
+    public function getCollectionName()
     {
-        $modifiers["strategy"] = "replace";
-        return $this->insert($table, $values, $modifiers);
+        throw new \LogicException("No collection name has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function upsert($table, $values, array $modifiers = [])
+    public function getSequence()
     {
-        $values = $this->parseValues($values);
-        if ($this->primaryKeyIsSet($values)) {
-            return $this->updateById($table, $values[self::PRIMARY_KEY], $values);
-        }
-        return $this->insert($table, $values, $modifiers);
+        throw new \LogicException("Sequence has not ben initialised.");
     }
 
-    public function deleteBy($table, array $filters)
+    public function aggregate($type)
     {
-        $delete = new DeleteQuery($table);
-        $delete->setFilters($this->parseKeys($filters));
-        return $delete;
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return call_user_func_array([$sequencer, "aggregate"], func_get_args());
     }
 
-    public function deleteById($table, $id)
+    public function limit($limit, $offset = null)
     {
-        return $this->deleteBy($table, [self::PRIMARY_KEY => $id]);
+        throw new \LogicException("Cannot use the 'limit' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function aggregate($table, array $operations, array $filters = [], array $modifiers = [])
+    public function group(array $by)
     {
-        $aggregate = new AggregationQuery($table);
-        $aggregate->setOperations($operations);
-        $aggregate->setFilters($filters);
-        $aggregate->setModifiers($modifiers);
-        return $aggregate;
+        throw new \LogicException("Cannot use the 'group' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function count($table, array $filters = [], array $modifiers = [])
+    public function andL()
     {
-        return $this->aggregate($table, ["count" => "*"], $filters, $modifiers);
+        throw new \LogicException("Cannot use the 'andL' method just yet.");
     }
 
-    protected function parseKeys(array $filters)
+    public function closure($content = null)
     {
-        return $filters;
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->closure($content);
     }
 
-    protected function parseValues($values)
+    public function func($name, array $args = [])
     {
-        if (is_array($values)) {
-            return $values;
-        }
-        if (is_object($values)) {
-            if (method_exists($values, "toArray")) {
-                return $values->toArray();
-            }
-            throw new QueryException("Values object does not implement the 'toArray' method");
-        }
-        throw new QueryException("Values are not an array or an object");
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->func($name, $args);
     }
 
-    protected function primaryKeyIsSet(array $values)
+    public function keyword($keyword)
     {
-        return !empty($values[self::PRIMARY_KEY]);
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->keyword($keyword);
     }
-} 
+
+    public function order(array $by)
+    {
+        throw new \LogicException("Cannot use the 'order' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+    }
+
+    public function notL()
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->not();
+    }
+
+    public function orL()
+    {
+        throw new \LogicException("Cannot use the 'orL' method just yet.");
+    }
+
+    public function ref($name, $alias = "", $type = "field")
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->ref($name, $alias, $type);
+    }
+
+    public function op($value)
+    {
+        throw new \LogicException("Cannot use the 'op' method just yet.");
+    }
+
+    public function where()
+    {
+        throw new \LogicException("Cannot use the 'where' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+    }
+
+    public function val($value)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->val($value);
+    }
+
+
+}
