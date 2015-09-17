@@ -7,14 +7,7 @@ use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 
 class TokenSequencer implements TokenSequencerInterface
 {
-    const TYPE_EXPRESSION = "expression";
-    const TYPE_FIND = "find";
-    const TYPE_SAVE = "save";
-    const TYPE_UPDATE = "update";
-    const TYPE_DELETE = "delete";
 
-    const SORT_ASC = 1;
-    const SORT_DESC = -1;
 
     protected $tokenFactory;
 
