@@ -35,20 +35,13 @@ class CompiledQuery
      */
     protected $query = "";
 
-    public function __construct($table = "", $method = "", $arguments = [], $calls = [])
-    {
-        $this->setTable($table);
-        $this->setMethod($method);
-        $this->setArguments($arguments);
-        $this->setCalls($calls);
-    }
-
     /**
      * @param array $arguments
      */
     protected function setArguments(array $arguments)
     {
         $this->arguments = $arguments;
+        return $this;
     }
 
     /**
@@ -68,6 +61,7 @@ class CompiledQuery
         foreach ($calls as $call) {
             $this->addCall($call);
         }
+        return $this;
     }
 
     /**
@@ -81,6 +75,7 @@ class CompiledQuery
         }
 
         $this->calls[] = $call;
+        return $this;
     }
 
     /**
@@ -97,6 +92,7 @@ class CompiledQuery
     protected function setMethod($method)
     {
         $this->method = $method;
+        return $this;
     }
 
     /**
@@ -113,6 +109,7 @@ class CompiledQuery
     protected function setTable($table)
     {
         $this->table = $table;
+        return $this;
     }
 
     /**
@@ -129,6 +126,7 @@ class CompiledQuery
     public function setQuery($query)
     {
         $this->query = $query;
+        return $this;
     }
 
     /**
