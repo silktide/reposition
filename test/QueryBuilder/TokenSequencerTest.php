@@ -50,7 +50,7 @@ class TokenSequencerTest extends \PHPUnit_Framework_TestCase {
             ],
             [
                 [
-                    "order" => [["field" => 1, "field2" => -1]]
+                    "sort" => [["field" => 1, "field2" => -1]]
                 ],
                 5
             ],
