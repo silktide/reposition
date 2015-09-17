@@ -19,101 +19,27 @@ interface QueryBuilderInterface
     const PRIMARY_KEY = "id";
 
     /**
-     * @param string $table
-     * @param array $filters
-     * @param array $fields
-     * @param array $sort
-     * @param int $limit
-     * @return FindQuery
+     * @param string $collection
+     * @return TokenSequencerInterface
      */
-    public function findBy($table, array $filters, array $fields, array $sort = [], $limit = 0);
+    public function find($collection);
 
     /**
-     * Convenience function wrapping findBy
-     *
-     * @param string $table
-     * @param mixed $id
-     * @return FindQuery
+     * @param string $collection
+     * @return TokenSequencerInterface
      */
-    public function findById($table, $id);
+    public function update($collection);
 
     /**
-     * @param string $table
-     * @param array $filters
-     * @param object|array $values
-     * @return UpdateQuery
+     * @param string $collection
+     * @return TokenSequencerInterface
      */
-    public function updateBy($table, array $filters, $values);
+    public function save($collection);
 
     /**
-     * Convenience function wrapping updateBy
-     *
-     * @param string $table
-     * @param mixed $id
-     * @param object|array $values
-     * @return UpdateQuery
+     * @param string $collection
+     * @return TokenSequencerInterface
      */
-    public function updateById($table, $id, $values);
-
-    /**
-     * @param string $table
-     * @param object|array $values
-     * @param array $modifiers
-     * @return InsertQuery
-     */
-    public function insert($table, $values, array $modifiers = []);
-
-    /**
-     * Convenience function wrapping insert
-     *
-     * @param string $table
-     * @param object|array $values
-     * @param array $modifiers
-     * @return InsertQuery
-     */
-    public function replace($table, $values, array $modifiers = []);
-
-    /**
-     * @param string $table
-     * @param object|array $values
-     * @param array $modifiers
-     * @return InsertQuery|UpdateQuery
-     */
-    public function upsert($table, $values, array $modifiers = []);
-
-    /**
-     * @param string $table
-     * @param array $filters
-     * @return DeleteQuery
-     */
-    public function deleteBy($table, array $filters);
-
-    /**
-     * Convenience function wrapping deleteBy
-     *
-     * @param string $table
-     * @param mixed $id
-     * @return mixed
-     */
-    public function deleteById($table, $id);
-
-    /**
-     * @param string $table
-     * @param array $operations
-     * @param array $filters
-     * @param array $modifiers
-     * @return AggregationQuery
-     */
-    public function aggregate($table, array $operations, array $filters = [], array $modifiers = []);
-
-    /**
-     * Convenience function wrapping aggregate
-     *
-     * @param string $table
-     * @param array $filters
-     * @param array $modifiers
-     * @return AggregationQuery
-     */
-    public function count($table, array $filters = [], array $modifiers = []);
+    public function delete($collection);
 
 } 

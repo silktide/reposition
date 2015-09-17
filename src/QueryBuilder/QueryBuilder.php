@@ -5,7 +5,7 @@ namespace Silktide\Reposition\QueryBuilder;
 /**
  *
  */
-class QueryBuilder extends TokenSequencer
+class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
 {
 
 
@@ -80,15 +80,17 @@ class QueryBuilder extends TokenSequencer
         throw new \LogicException("Sequence has not ben initialised.");
     }
 
+
+
     public function aggregate($type)
     {
         $sequencer = new TokenSequencer($this->tokenFactory);
         return call_user_func_array([$sequencer, "aggregate"], func_get_args());
     }
 
-    public function limit($limit, $offset = null)
+    public function where()
     {
-        throw new \LogicException("Cannot use the 'limit' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+        throw new \LogicException("Cannot use the 'where' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
     public function group(array $by)
@@ -96,33 +98,17 @@ class QueryBuilder extends TokenSequencer
         throw new \LogicException("Cannot use the 'group' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function andL()
-    {
-        throw new \LogicException("Cannot use the 'andL' method just yet.");
-    }
-
-    public function closure($content = null)
-    {
-        $sequencer = new TokenSequencer($this->tokenFactory);
-        return $sequencer->closure($content);
-    }
-
-    public function func($name, array $args = [])
-    {
-        $sequencer = new TokenSequencer($this->tokenFactory);
-        return $sequencer->func($name, $args);
-    }
-
-    public function keyword($keyword)
-    {
-        $sequencer = new TokenSequencer($this->tokenFactory);
-        return $sequencer->keyword($keyword);
-    }
-
-    public function order(array $by)
+    public function sort(array $by)
     {
         throw new \LogicException("Cannot use the 'order' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
+
+    public function limit($limit, $offset = null)
+    {
+        throw new \LogicException("Cannot use the 'limit' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+    }
+
+
 
     public function notL()
     {
@@ -130,9 +116,22 @@ class QueryBuilder extends TokenSequencer
         return $sequencer->not();
     }
 
+    public function andL()
+    {
+        throw new \LogicException("Cannot use the 'andL' method just yet.");
+    }
+
     public function orL()
     {
         throw new \LogicException("Cannot use the 'orL' method just yet.");
+    }
+
+
+
+    public function closure($content = null)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->closure($content);
     }
 
     public function ref($name, $alias = "", $type = "field")
@@ -146,16 +145,27 @@ class QueryBuilder extends TokenSequencer
         throw new \LogicException("Cannot use the 'op' method just yet.");
     }
 
-    public function where()
-    {
-        throw new \LogicException("Cannot use the 'where' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
-    }
-
     public function val($value)
     {
         $sequencer = new TokenSequencer($this->tokenFactory);
         return $sequencer->val($value);
     }
 
+    public function entity($entity)
+    {
+        throw new \LogicException("Cannot use the 'entity' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+    }
+
+    public function func($name, array $args = [])
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->func($name, $args);
+    }
+
+    public function keyword($keyword)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->keyword($keyword);
+    }
 
 }

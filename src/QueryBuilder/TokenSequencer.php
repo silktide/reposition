@@ -5,7 +5,7 @@ namespace Silktide\Reposition\QueryBuilder;
 use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 
-class TokenSequencer 
+class TokenSequencer implements TokenSequencerInterface
 {
     const TYPE_EXPRESSION = "expression";
     const TYPE_FIND = "find";
@@ -129,9 +129,9 @@ class TokenSequencer
         return $this;
     }
 
-    public function order(array $by)
+    public function sort(array $by)
     {
-        $this->addNewToSequence("order");
+        $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
             $this->addMixedContentToSequence($ref, "field");
             $this->addNewToSequence("sort direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
@@ -231,6 +231,12 @@ class TokenSequencer
     public function val($value)
     {
         $this->addNewToSequence("value", $value);
+        return $this;
+    }
+
+    public function entity($entity)
+    {
+        $this->addNewToSequence("entity", $entity);
         return $this;
     }
 
