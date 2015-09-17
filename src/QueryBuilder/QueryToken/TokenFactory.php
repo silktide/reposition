@@ -10,6 +10,9 @@ class TokenFactory
         if (!is_null($alias)) {
             return new Reference($type, $value, $alias);
         } elseif (!is_null($value)) {
+            if ($type == "entity") {
+                return new Entity($value);
+            }
             return new Value($type, $value);
         }
         return new Token($type);
