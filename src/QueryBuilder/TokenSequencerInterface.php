@@ -2,7 +2,7 @@
 
 namespace Silktide\Reposition\QueryBuilder;
 
-class TokenSequencerInterface 
+interface TokenSequencerInterface
 {
 
     const TYPE_EXPRESSION = "expression";
