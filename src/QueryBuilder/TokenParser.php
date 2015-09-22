@@ -112,8 +112,6 @@ class TokenParser
     {
         $definition = $this->getDefinition($type);
 
-        echo "\ndefinition: " . print_r($definition, true);
-
         foreach ($definition as $tokenDefinition) {
             $multiple = empty($tokenDefinition["multiple"])? false: $tokenDefinition["multiple"];
             $optional = empty($tokenDefinition["optional"])? false: $tokenDefinition["optional"];
@@ -126,22 +124,17 @@ class TokenParser
             if (isset($tokenDefinition["value"])) {
                 $definitionType = "value";
                 $definitionValue = $tokenDefinition["value"];
-                echo "\ndetected value constraint";
             } elseif (isset($tokenDefinition["name"])) {
                 $definitionType = "name";
                 $definitionValue = $tokenDefinition["name"];
-                echo "\ndetected name constraint";
             } elseif (isset($tokenDefinition["type"])) {
                 $definitionType = "type";
                 $definitionValue = $tokenDefinition["type"];
-                echo "\ndetected type constraint";
             } elseif (isset($tokenDefinition["any"])) {
-                echo "\ndetected any constraint";
                 $any = $tokenDefinition["any"];
                 // try each value for any and see if we can match anything. use the first match we come to
                 if (!empty($any["name"])) {
                     foreach ($any["name"] as $name) {
-                        echo "\nany name: " . print_r($name, true);
                         try {
                             $this->parseTokenConstraint("name", $name, $sequence, $position);
                             $definitionType = "name";
@@ -154,7 +147,6 @@ class TokenParser
                 }
                 if (empty($definitionType) && !empty($any["type"])) {
                     foreach ($any["type"] as $type) {
-                        echo "\nany type: " . print_r($type, true);
                         try {
                             $this->parseTokens($type, $sequence, $position);
                             $definitionType = "type";
@@ -166,8 +158,6 @@ class TokenParser
                     }
                 }
             }
-            echo "\ndef type: $definitionType";
-            echo "\ndef value: " . print_r($definitionValue, true);
             // handle cases where the definition has no constraints  and where the
             if (empty($definitionType)) {
                 if (empty($f)) {
@@ -198,7 +188,6 @@ class TokenParser
 
     protected function parseTokenConstraint($constraint, $value, $sequence, $position)
     {
-        echo "\nchecking that sequence position #$position matches $constraint: $value";
         if (empty($sequence[$position])) {
             throw new TokenParseException("Unexpected end of token sequence");
         }
