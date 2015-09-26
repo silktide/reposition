@@ -2,8 +2,7 @@
 
 namespace Silktide\Reposition\Repository;
 
-use Silktide\Reposition\Exception\RepositoryException;
-use Silktide\Reposition\Query\Query;
+use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
 
@@ -76,7 +75,7 @@ abstract class AbstractRepository implements RepositoryInterface
         $this->createWhereFromFilters($query, $filters);
 
         if (!empty($sort)) {
-            $query->order($sort);
+            $query->sort($sort);
         }
 
         if (!empty($limit)) {
@@ -125,8 +124,9 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param Query $query
+     * @param TokenSequencerInterface $query
      * @param bool $createEntity
+     *
      * @return object|array
      */
     protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
