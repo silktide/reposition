@@ -2,7 +2,7 @@
 
 namespace Silktide\Reposition\Metadata;
 
-interface MetadataProviderInterface
+interface EntityMetadataFactoryInterface
 {
 
     /**
@@ -10,6 +10,6 @@ interface MetadataProviderInterface
      *
      * @return EntityMetadata
      */
-    public function getMetadata($reference);
+    public function createMetadata($reference);
 
 } 
