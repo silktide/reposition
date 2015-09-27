@@ -33,6 +33,11 @@ class EntityMetadata
     protected $entity;
 
     /**
+     * @var string
+     */
+    protected $table;
+
+    /**
      * @var array
      */
     protected $fields = [];
@@ -53,6 +58,22 @@ class EntityMetadata
     public function getEntity()
     {
         return $this->entity;
+    }
+
+    /**
+     * @param string $table
+     */
+    public function setTable($table)
+    {
+        $this->table = $table;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTable()
+    {
+        return $this->table;
     }
 
     public function addFieldMetadata($name, array $metadata)

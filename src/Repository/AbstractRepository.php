@@ -46,9 +46,15 @@ abstract class AbstractRepository implements RepositoryInterface
         $this->configureMetadata();
     }
 
+    /**
+     * Configure the metadata for the entity this repository interacts with
+     *
+     * Override this method to set additional fields or define relationships with other entities
+     *
+     */
     protected function configureMetadata()
     {
-        // Stub method. Override this to add metadata about specific entities
+        $this->entityMetadata->setTable($this->tableName);
     }
 
     /**
