@@ -70,7 +70,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function find($id)
     {
-        $query = $this->queryBuilder->find($this->tableName)
+        $query = $this->queryBuilder->find($this->entityMetadata->getTable())
             ->where()
             ->ref(QueryBuilderInterface::PRIMARY_KEY)
             ->op("=")
@@ -83,7 +83,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function filter(array $filters, array $sort = [], $limit = 0, array $options = [])
     {
-        $query = $this->queryBuilder->find($this->tableName);
+        $query = $this->queryBuilder->find($this->entityMetadata->getTable());
 
         $this->createWhereFromFilters($query, $filters);
 
@@ -103,7 +103,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function save($entity, array $options = [])
     {
-        $query = $this->queryBuilder->save($this->tableName)->entity($entity);
+        $query = $this->queryBuilder->save($this->entityMetadata->getTable())->entity($entity);
         return $this->doQuery($query, false);
     }
 
@@ -125,7 +125,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function count(array $conditions = [], array $groupBy = [])
     {
-        $query = $this->queryBuilder->find($this->tableName)->aggregate("count", "*");
+        $query = $this->queryBuilder->find($this->entityMetadata->getTable())->aggregate("count", "*");
 
         $this->createWhereFromFilters($query, $conditions);
 
@@ -144,7 +144,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
-        return $this->storage->query($query, $createEntity? $this->entityName: "");
+        return $this->storage->query($query, $createEntity? $this->entityMetadata->getEntity(): "");
     }
 
     protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true)
