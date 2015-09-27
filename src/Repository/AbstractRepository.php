@@ -5,6 +5,7 @@ namespace Silktide\Reposition\Repository;
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
+use Silktide\Reposition\Metadata\EntityMetadata;
 
 /**
  *
@@ -13,9 +14,9 @@ abstract class AbstractRepository implements RepositoryInterface
 {
 
     /**
-     * @var string
+     * @var EntityMetadata
      */
-    protected $entityName;
+    protected $entityMetadata;
 
     /**
      * @var string
@@ -33,15 +34,21 @@ abstract class AbstractRepository implements RepositoryInterface
     protected $storage;
 
     /**
-     * @param string $entityName
+     * @param EntityMetadata $entityMetadata
      * @param QueryBuilderInterface $queryBuilder
      * @param StorageInterface $storage
      */
-    public function __construct($entityName, QueryBuilderInterface $queryBuilder, StorageInterface $storage)
+    public function __construct(EntityMetadata $entityMetadata, QueryBuilderInterface $queryBuilder, StorageInterface $storage)
     {
-        $this->entityName = $entityName;
+        $this->entityMetadata = $entityMetadata;
         $this->queryBuilder = $queryBuilder;
         $this->storage = $storage;
+        $this->configureMetadata();
+    }
+
+    protected function configureMetadata()
+    {
+        // Stub method. Override this to add metadata about specific entities
     }
 
     /**
@@ -49,7 +56,7 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function getEntityName()
     {
-        return $this->entityName;
+        return $this->entityMetadata->getEntity();
     }
 
     /**

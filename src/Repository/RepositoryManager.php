@@ -4,6 +4,7 @@ namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
 use Silktide\Reposition\Storage\StorageInterface;
+use Silktide\Reposition\Metadata\EntityMetadataFactoryInterface;
 
 /**
  *
@@ -17,9 +18,12 @@ class RepositoryManager
 
     protected $defaultStorage;
 
-    public function __construct(StorageInterface $storage, array $repositoryNamespaces, array $repositories = [])
+    protected $metadataFactory;
+
+    public function __construct(StorageInterface $storage, EntityMetadataFactoryInterface $metadataFactory, array $repositoryNamespaces, array $repositories = [])
     {
         $this->defaultStorage = $storage;
+        $this->metadataFactory = $metadataFactory;
         $this->repositoryNamespaces = $repositoryNamespaces;
         $this->repositoryNamespaces[] = ""; // for classes with no namespace
         foreach ($repositories as $repository) {
@@ -56,7 +60,7 @@ class RepositoryManager
                 $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
                 if (class_exists($repoFqcn)) {
                     $this->repositoryCache[$entity] = new $repoFqcn(
-                        $entity,
+                        $this->metadataFactory->create($entity),
                         $this->defaultStorage->getQueryBuilder(),
                         $this->defaultStorage
                     );
