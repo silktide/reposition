@@ -14,6 +14,11 @@ interface RepositoryInterface
     public function getEntityName();
 
     /**
+     * @return string
+     */
+    public function getCollectionName();
+
+    /**
      * @param string|int $id
      * @return object
      */

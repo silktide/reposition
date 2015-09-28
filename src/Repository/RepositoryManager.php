@@ -3,13 +3,14 @@
 namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
+use Silktide\Reposition\Exception\MetadataException;
 use Silktide\Reposition\Storage\StorageInterface;
-use Silktide\Reposition\Metadata\EntityMetadataFactoryInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 
 /**
  *
  */
-class RepositoryManager 
+class RepositoryManager implements EntityMetadataProviderInterface
 {
 
     protected $repositoryNamespaces = [];
@@ -74,6 +75,20 @@ class RepositoryManager
             }
         }
         return $this->repositoryCache[$entity];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadata($entity)
+    {
+        $repository = $this->getRepositoryFor($entity);
+
+        if (!$repository instanceof MetadataRepositoryInterface) {
+            throw new MetadataException("Cannot get metadata for '$entity', the repository class for the entity does not supply metadata information.");
+        }
+
+        return $repository->getEntityMetadata();
     }
 
 } 

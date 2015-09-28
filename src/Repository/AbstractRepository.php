@@ -10,7 +10,7 @@ use Silktide\Reposition\Metadata\EntityMetadata;
 /**
  *
  */
-abstract class AbstractRepository implements RepositoryInterface
+abstract class AbstractRepository implements RepositoryInterface, MetadataRepositoryInterface
 {
 
     /**
@@ -63,6 +63,22 @@ abstract class AbstractRepository implements RepositoryInterface
     public function getEntityName()
     {
         return $this->entityMetadata->getEntity();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCollectionName()
+    {
+        return $this->entityMetadata->getTable();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadata()
+    {
+        return $this->entityMetadata;
     }
 
     /**
