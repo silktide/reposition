@@ -4,16 +4,18 @@ namespace Silktide\Reposition\QueryBuilder;
 
 use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
+use Silktide\Reposition\Exception\TokenParseExcaptoin;
 
 class TokenSequencer implements TokenSequencerInterface
 {
-
 
     protected $tokenFactory;
 
     protected $type;
 
     protected $collectionName;
+
+    protected $includes = [];
 
     protected $querySequence = [];
 
@@ -113,6 +115,31 @@ class TokenSequencer implements TokenSequencerInterface
             default:
                 throw new \InvalidArgumentException("The aggregate function '$type' is invalid");
         }
+        return $this;
+    }
+
+    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "")
+    {
+        // check we're dealing with a query
+        if (!$this->isQuery()) {
+            throw new TokenParseException("Cannot include an entity on an expression sequence.");
+        }
+
+        // check for alias colisions
+        if (!empty($this->includes[$collectionAlias])) {
+            throw new TokenParseException("Cannot include entity '$entity'. The specified alias '$collectionAlias' is already in use");
+        }
+
+        // add the include and create the join
+        $this->includes[$collectionAlias] = $entity;
+        return $this->join($collection, $on, $collectionAlias);
+    }
+
+    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "")
+    {
+        $this->addNewToSequence("join");
+        $this->addNewToSequence("collection", $collection, $collectionAlias);
+        $this->closure($on);
         return $this;
     }
 

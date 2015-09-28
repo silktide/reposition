@@ -42,6 +42,25 @@ interface TokenSequencerInterface
     public function aggregate($type);
 
     /**
+     * @param string $entity - class name to include
+     * @param string $collection - collection to join with
+     * @param TokenSequencerInterface $on - conditions to join on
+     * @param string $collectionAlias
+     *
+     * @return TokenSequencerInterface
+     */
+    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "");
+
+    /**
+     * @param string $collection - collection to join with
+     * @param TokenSequencerInterface $on - conditions to join on
+     * @param string $collectionAlias
+     *
+     * @return TokenSequencerInterface
+     */
+    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "");
+
+    /**
      * @return TokenSequencerInterface
      */
     public function where();

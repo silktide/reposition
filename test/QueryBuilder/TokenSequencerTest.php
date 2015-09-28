@@ -32,6 +32,8 @@ class TokenSequencerTest extends \PHPUnit_Framework_TestCase {
 
     public function sequenceProvider()
     {
+        $sequenceMock = \Mockery::mock("Silktide\\Reposition\\QueryBuilder\\TokenSequencerInterface");
+        $sequenceMock->shouldReceive("getSequence")->andReturn([]);
         return [
             [
                 [
@@ -87,6 +89,12 @@ class TokenSequencerTest extends \PHPUnit_Framework_TestCase {
             [
                 [
                     "func" => ["ifnull", ["field", "value"]]
+                ],
+                5
+            ],
+            [
+                [
+                    "join" => ["table", $sequenceMock]
                 ],
                 5
             ]
