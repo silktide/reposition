@@ -29,6 +29,8 @@ interface TokenSequencerInterface
      */
     public function getCollectionName();
 
+    public function getIncludes();
+
     /**
      * @return array
      */

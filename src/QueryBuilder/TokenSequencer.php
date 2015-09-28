@@ -63,6 +63,11 @@ class TokenSequencer implements TokenSequencerInterface
         return $this->collectionName;
     }
 
+    public function getIncludes()
+    {
+        return $this->includes;
+    }
+
     public function getSequence()
     {
         return $this->querySequence;
