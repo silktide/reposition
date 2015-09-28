@@ -1,4 +1,9 @@
-# reposition
+# Reposition
+
+![](https://img.shields.io/badge/owner-danny-brightgreen.svg)
+
 A modular database abstraction system
 
-Reposition - "because a repository is a store of entities."
+# Credits
+
+Written by Danny Smart
