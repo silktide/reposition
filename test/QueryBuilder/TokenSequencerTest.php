@@ -3,6 +3,7 @@
 namespace Silktide\Reposition\Tests\QueryBuilder;
 
 use Silktide\Reposition\QueryBuilder\TokenSequencer;
+use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 
 class TokenSequencerTest extends \PHPUnit_Framework_TestCase {
 
@@ -96,7 +97,13 @@ class TokenSequencerTest extends \PHPUnit_Framework_TestCase {
                 [
                     "join" => ["table", $sequenceMock]
                 ],
-                5
+                6
+            ],
+            [
+                [
+                    "join" => ["table", $sequenceMock, "", TokenSequencerInterface::JOIN_FULL]
+                ],
+                7
             ]
         ];
     }

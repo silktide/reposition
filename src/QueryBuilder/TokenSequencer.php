@@ -123,7 +123,7 @@ class TokenSequencer implements TokenSequencerInterface
         return $this;
     }
 
-    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "")
+    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT)
     {
         // check we're dealing with a query
         if (!$this->isQuery()) {
@@ -137,11 +137,37 @@ class TokenSequencer implements TokenSequencerInterface
 
         // add the include and create the join
         $this->includes[$collectionAlias] = $entity;
-        return $this->join($collection, $on, $collectionAlias);
+        return $this->join($collection, $on, $collectionAlias, $type, $type);
     }
 
-    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "")
+    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT)
     {
+        // validate join type
+        switch ($type) {
+            case "":
+                $type = self::JOIN_INNER;
+                // no break
+            case self::JOIN_INNER:
+            case self::JOIN_LEFT:
+            case self::JOIN_RIGHT:
+            case self::JOIN_FULL:
+                // direction is fine
+                break;
+            default:
+                throw new TokenParseException(
+                    "Unsupported join type: '$type'. Join type must be '" .
+                    self::JOIN_INNER . "' (default), '" .
+                    self::JOIN_LEFT . "', '" .
+                    self::JOIN_RIGHT . "' or '" .
+                    self::JOIN_FULL . "'"
+                );
+        }
+
+
+        $this->addNewToSequence($type);
+        if ($type == self::JOIN_FULL) {
+            $this->addNewToSequence("outer");
+        }
         $this->addNewToSequence("join");
         $this->addNewToSequence("collection", $collection, $collectionAlias);
         $this->closure($on);

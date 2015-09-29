@@ -14,6 +14,11 @@ interface TokenSequencerInterface
     const SORT_ASC = 1;
     const SORT_DESC = -1;
 
+    const JOIN_INNER = "inner";
+    const JOIN_LEFT = "left";
+    const JOIN_RIGHT = "right";
+    const JOIN_FULL = "full";
+
     /**
      * @return string
      */
@@ -48,19 +53,21 @@ interface TokenSequencerInterface
      * @param string $collection - collection to join with
      * @param TokenSequencerInterface $on - conditions to join on
      * @param string $collectionAlias
+     * @param string $type  "left", "right", "full" or "inner" (empty = "inner")
      *
      * @return TokenSequencerInterface
      */
-    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "");
+    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT);
 
     /**
      * @param string $collection - collection to join with
      * @param TokenSequencerInterface $on - conditions to join on
      * @param string $collectionAlias
+     * @param string $type - "left", "right", "full" or "inner" (empty = "inner")
      *
      * @return TokenSequencerInterface
      */
-    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "");
+    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT);
 
     /**
      * @return TokenSequencerInterface
