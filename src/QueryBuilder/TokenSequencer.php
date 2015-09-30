@@ -23,6 +23,8 @@ class TokenSequencer implements TokenSequencerInterface
 
     protected $currentSection = "initial";
 
+    protected $requiresReset = true;
+
     public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, $collectionName = "")
     {
         $this->tokenFactory = $tokenFactory;
@@ -71,6 +73,21 @@ class TokenSequencer implements TokenSequencerInterface
     public function getSequence()
     {
         return $this->querySequence;
+    }
+
+    public function getNextToken()
+    {
+        // reset if required, then mark as having been reset
+        if ($this->requiresReset) {
+            reset($this->querySequence);
+            $this->requiresReset = false;
+        }
+        // get the current token
+        $token = current($this->querySequence);
+        // advance the array pointer ready for the next call
+        next($this->querySequence);
+        // return the current token
+        return $token;
     }
 
     protected function addToSequence(Token $token)

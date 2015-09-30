@@ -2,6 +2,8 @@
 
 namespace Silktide\Reposition\QueryBuilder;
 
+use Silktide\Reposition\QueryBuilder\QueryToken\Token;
+
 interface TokenSequencerInterface
 {
 
@@ -40,6 +42,13 @@ interface TokenSequencerInterface
      * @return array
      */
     public function getSequence();
+
+    /**
+     * Returns the next token in the sequence or false if the sequence has ended
+     *
+     * @return Token|bool
+     */
+    public function getNextToken();
 
     /**
      * @param string $type
