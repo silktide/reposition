@@ -35,7 +35,7 @@ class EntityMetadata
     /**
      * @var string
      */
-    protected $table;
+    protected $collection;
 
     /**
      * @var array
@@ -63,17 +63,17 @@ class EntityMetadata
     /**
      * @param string $table
      */
-    public function setTable($table)
+    public function setCollection($table)
     {
-        $this->table = $table;
+        $this->collection = $table;
     }
 
     /**
      * @return string
      */
-    public function getTable()
+    public function getCollection()
     {
-        return $this->table;
+        return $this->collection;
     }
 
     public function addFieldMetadata($name, array $metadata)
