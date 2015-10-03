@@ -13,7 +13,7 @@ class TokenSequencer implements TokenSequencerInterface
 
     protected $type;
 
-    protected $collectionName;
+    protected $entityName;
 
     protected $includes = [];
 
@@ -25,11 +25,11 @@ class TokenSequencer implements TokenSequencerInterface
 
     protected $requiresReset = true;
 
-    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, $collectionName = "")
+    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, $entityName = "")
     {
         $this->tokenFactory = $tokenFactory;
         $this->setType($type);
-        $this->collectionName = $collectionName;
+        $this->entityName = $entityName;
     }
 
     protected function setType($type)
@@ -60,9 +60,9 @@ class TokenSequencer implements TokenSequencerInterface
     /**
      * @return string
      */
-    public function getCollectionName()
+    public function getEntityName()
     {
-        return $this->collectionName;
+        return $this->entityName;
     }
 
     public function getIncludes()
@@ -147,9 +147,16 @@ class TokenSequencer implements TokenSequencerInterface
             throw new TokenParseException("Cannot include an entity on an expression sequence.");
         }
 
+        if (empty($collectionAlias)) {
+            if ($entity == $this->entityName) {
+                throw new TokenParseException("Cannot include the main entity (self referencing relationship) without a collection alias ");
+            }
+            $collectionAlias = $collection;
+        }
+
         // check for alias colisions
         if (!empty($this->includes[$collectionAlias])) {
-            throw new TokenParseException("Cannot include entity '$entity'. The specified alias '$collectionAlias' is already in use");
+            throw new TokenParseException("Cannot include entity '$entity'. The specified collection alias '$collectionAlias' is already in use");
         }
 
         // add the include and create the join
@@ -202,7 +209,7 @@ class TokenSequencer implements TokenSequencerInterface
         $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
             $this->addMixedContentToSequence($ref, "field");
-            $this->addNewToSequence("sort direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
+            $this->addNewToSequence("sort-direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
         }
         return $this;
     }
@@ -261,7 +268,7 @@ class TokenSequencer implements TokenSequencerInterface
      */
     public function closure($content = null)
     {
-        $this->addNewToSequence("closure start");
+        $this->addNewToSequence("open");
 
         if (!empty($content)) {
             if ($content instanceof TokenSequencer) {
@@ -277,7 +284,7 @@ class TokenSequencer implements TokenSequencerInterface
             }
         }
 
-        $this->addNewToSequence("closure end");
+        $this->addNewToSequence("close");
 
         return $this;
     }
@@ -298,7 +305,9 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function val($value)
     {
-        $this->addNewToSequence("value", $value);
+        $type = gettype($value);
+
+        $this->addNewToSequence($type, $value);
         return $this;
     }
 

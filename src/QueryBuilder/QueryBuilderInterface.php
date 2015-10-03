@@ -19,27 +19,27 @@ interface QueryBuilderInterface
     const PRIMARY_KEY = "id";
 
     /**
-     * @param string $collection
+     * @param string $entity
      * @return TokenSequencerInterface
      */
-    public function find($collection);
+    public function find($entity);
 
     /**
-     * @param string $collection
+     * @param string $entity
      * @return TokenSequencerInterface
      */
-    public function update($collection);
+    public function update($entity);
 
     /**
-     * @param string $collection
+     * @param string $entity
      * @return TokenSequencerInterface
      */
-    public function save($collection);
+    public function save($entity);
 
     /**
-     * @param string $collection
+     * @param string $entity
      * @return TokenSequencerInterface
      */
-    public function delete($collection);
+    public function delete($entity);
 
 } 

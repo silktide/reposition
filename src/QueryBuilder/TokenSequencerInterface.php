@@ -34,8 +34,11 @@ interface TokenSequencerInterface
     /**
      * @return string
      */
-    public function getCollectionName();
+    public function getEntityName();
 
+    /**
+     * @return array
+     */
     public function getIncludes();
 
     /**

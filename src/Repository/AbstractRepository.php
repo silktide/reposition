@@ -21,7 +21,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     /**
      * @var string
      */
-    protected $tableName;
+    protected $collectionName;
 
     /**
      * @var QueryBuilderInterface
@@ -54,7 +54,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     protected function configureMetadata()
     {
-        $this->entityMetadata->setTable($this->tableName);
+        $this->entityMetadata->setCollection($this->collectionName);
     }
 
     /**
@@ -70,7 +70,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function getCollectionName()
     {
-        return $this->entityMetadata->getTable();
+        return $this->entityMetadata->getCollection();
     }
 
     /**
@@ -86,7 +86,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function find($id)
     {
-        $query = $this->queryBuilder->find($this->entityMetadata->getTable())
+        $query = $this->queryBuilder->find($this->getEntityName())
             ->where()
             ->ref(QueryBuilderInterface::PRIMARY_KEY)
             ->op("=")
@@ -99,7 +99,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function filter(array $filters, array $sort = [], $limit = 0, array $options = [])
     {
-        $query = $this->queryBuilder->find($this->entityMetadata->getTable());
+        $query = $this->queryBuilder->find($this->getEntityName());
 
         $this->createWhereFromFilters($query, $filters);
 
@@ -119,7 +119,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function save($entity, array $options = [])
     {
-        $query = $this->queryBuilder->save($this->entityMetadata->getTable())->entity($entity);
+        $query = $this->queryBuilder->save($this->getEntityName())->entity($entity);
         return $this->doQuery($query, false);
     }
 
@@ -128,7 +128,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function delete($id)
     {
-        $query = $this->queryBuilder->delete($this->tableName)
+        $query = $this->queryBuilder->delete($this->getEntityName())
             ->where()
             ->ref(QueryBuilderInterface::PRIMARY_KEY)
             ->op("=")
@@ -141,7 +141,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function count(array $conditions = [], array $groupBy = [])
     {
-        $query = $this->queryBuilder->find($this->entityMetadata->getTable())->aggregate("count", "*");
+        $query = $this->queryBuilder->find($this->getEntityName())->aggregate("count", "*");
 
         $this->createWhereFromFilters($query, $conditions);
 
@@ -160,7 +160,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
-        return $this->storage->query($query, $createEntity? $this->entityMetadata->getEntity(): "");
+        return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
     }
 
     protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true)
@@ -181,7 +181,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         reset($filters);
 
         // create filters
-        for ($filters as $field => $value) {
+        foreach ($filters as $field => $value) {
             $query->ref($field)->op("=")->val($value)->andL();
         }
         // filter last field

@@ -15,47 +15,47 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
     /**
      * SELECT, etc...
      *
-     * @param $collection
+     * @param $entity
      *
      * @return TokenSequencer
      */
-    public function find($collection)
+    public function find($entity)
     {
-        return new TokenSequencer($this->tokenFactory, self::TYPE_FIND, $collection);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_FIND, $entity);
     }
 
     /**
      * INSERT, straightforward UPDATE
      *
-     * @param $collection
+     * @param $entity
      *
      * @return TokenSequencer
      */
-    public function save($collection)
+    public function save($entity)
     {
-        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $collection);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $entity);
     }
 
     /**
      * Mass update e.g. UPDATE field = field + 1 WHERE ...
      *
-     * @param $collection
+     * @param $entity
      *
      * @return TokenSequencer
      */
-    public function update($collection)
+    public function update($entity)
     {
-        return new TokenSequencer($this->tokenFactory, self::TYPE_UPDATE, $collection);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_UPDATE, $entity);
     }
 
     /**
-     * @param $collection
+     * @param $entity
      *
      * @return TokenSequencer
      */
-    public function delete($collection)
+    public function delete($entity)
     {
-        return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $collection);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $entity);
     }
 
     ////////// OVERRIDE TokenSequencer METHODS TO PREVENT INVALID USAGE //////////
@@ -70,9 +70,9 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
         throw new \LogicException("Cannot check if this is a query. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function getCollectionName()
+    public function getEntityName()
     {
-        throw new \LogicException("No collection name has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+        throw new \LogicException("No entity name has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
     public function getSequence()
