@@ -64,7 +64,7 @@ class MongoStorage implements StorageInterface
 
         try {
             $response = call_user_func_array(
-                [$this->database->{$compiledQuery->getTable()}, $compiledQuery->getMethod()],
+                [$this->database->{$compiledQuery->getCollection()}, $compiledQuery->getMethod()],
                 $compiledQuery->getArguments()
             );
         } catch (\MongoException $e) {
