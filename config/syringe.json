@@ -43,7 +43,6 @@
       "class": "Silktide\\Reposition\\Storage\\MongoStorage",
       "arguments": [
         "@mongo.db",
-        "@queryBuilder",
         "@mongo.interpreter",
         "@clay.hydrator",
         "@mongo.normaliser"
@@ -54,6 +53,7 @@
       "class": "Silktide\\Reposition\\Repository\\RepositoryManager",
       "arguments": [
         "@mongo.storage",
+        "@queryBuilder",
         "%repository.namespaces%",
         "%repository.instances%"
       ]

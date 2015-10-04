@@ -12,11 +12,6 @@ interface StorageInterface
 {
 
     /**
-     * @return QueryBuilderInterface
-     */
-    public function getQueryBuilder();
-
-    /**
      * @param TokenSequencerInterface $query
      * @param string $entityClass
      * @return object
