@@ -10,6 +10,7 @@ class EntityMetadata
     // metadata arraykeys
     const METADATA_FIELD_TYPE = "type";
     const METADATA_RELATIONSHIP_TYPE = "type";
+    const METADATA_RELATIONSHIP_ALIAS = "alias";
     const METADATA_RELATIONSHIP_PROPERTY = "property";
     const METADATA_RELATIONSHIP_OUR_FIELD = "our field";
     const METADATA_RELATIONSHIP_THEIR_FIELD = "their field";
@@ -156,6 +157,9 @@ class EntityMetadata
                 $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata, false);
                 $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata, empty($finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD]));
                 break;
+        }
+        if (!empty($metadata[self::METADATA_RELATIONSHIP_ALIAS])) {
+            $entity = $metadata[self::METADATA_RELATIONSHIP_ALIAS];
         }
         $this->relationships[$entity] = $finalMetadata;
     }
