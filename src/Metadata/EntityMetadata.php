@@ -10,6 +10,7 @@ class EntityMetadata
     // metadata arraykeys
     const METADATA_FIELD_TYPE = "type";
     const METADATA_RELATIONSHIP_TYPE = "type";
+    const METADATA_RELATIONSHIP_PROPERTY = "property";
     const METADATA_RELATIONSHIP_OUR_FIELD = "our field";
     const METADATA_RELATIONSHIP_THEIR_FIELD = "their field";
     const METADATA_RELATIONSHIP_JOIN_TABLE = "join table";
@@ -50,7 +51,7 @@ class EntityMetadata
     /**
      * @param string $entity
      */
-    public function construct($entity)
+    public function __construct($entity)
     {
         $this->entity = $entity;
     }
@@ -132,8 +133,15 @@ class EntityMetadata
         if (!isset($metadata[self::METADATA_RELATIONSHIP_TYPE])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a relationship type");
         }
+        if (!isset($metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+            throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying the property of the parent entity that the relationship refers to");
+        }
+        if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+            throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
+        }
         $type = $metadata[self::METADATA_RELATIONSHIP_TYPE];
         $finalMetadata[self::METADATA_RELATIONSHIP_TYPE] = $type;
+        $finalMetadata[self::METADATA_RELATIONSHIP_PROPERTY] = $metadata[self::METADATA_RELATIONSHIP_PROPERTY];
         switch ($type) {
             case self::RELATIONSHIP_TYPE_MANY_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_JOIN_TABLE] = $this->getJoinTable($entity, $metadata);
