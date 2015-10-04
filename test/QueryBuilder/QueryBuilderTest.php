@@ -3,6 +3,7 @@
 namespace Silktide\Reposition\Tests\QueryBuilder;
 
 use Silktide\Reposition\QueryBuilder\QueryBuilder;
+use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 
 class QueryBuilderTest extends \PHPUnit_Framework_TestCase {
 
@@ -22,13 +23,14 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase {
      */
     public function testQueryStarts($method, $expectedType)
     {
-        $collection = "collection";
+        $entity = "entity";
 
         $qb = new QueryBuilder($this->tokenFactory);
-        $query = $qb->{$method}($collection);
+        /** @var TokenSequencerInterface $query */
+        $query = $qb->{$method}($entity);
 
         $this->assertEquals($expectedType, $query->getType());
-        $this->assertEquals($collection, $query->getCollectionName());
+        $this->assertEquals($entity, $query->getEntityName());
     }
 
     public function queryStartProvider()
