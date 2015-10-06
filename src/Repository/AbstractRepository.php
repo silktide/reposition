@@ -24,6 +24,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected $collectionName;
 
     /**
+     * @var string
+     */
+    protected $primaryKey;
+
+    /**
      * @var QueryBuilderInterface
      */
     protected $queryBuilder;
@@ -55,6 +60,9 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected function configureMetadata()
     {
         $this->entityMetadata->setCollection($this->collectionName);
+        if (!empty($this->primaryKey)) {
+            $this->entityMetadata->setPrimaryKey($this->primaryKey);
+        }
     }
 
     /**

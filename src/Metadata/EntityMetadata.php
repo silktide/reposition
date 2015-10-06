@@ -37,6 +37,11 @@ class EntityMetadata
     /**
      * @var string
      */
+    protected $primaryKey;
+
+    /**
+     * @var string
+     */
     protected $collection;
 
     /**
@@ -51,15 +56,33 @@ class EntityMetadata
 
     /**
      * @param string $entity
+     * @param string $primaryKey
      */
-    public function __construct($entity)
+    public function __construct($entity, $primaryKey = null)
     {
         $this->entity = $entity;
+        $this->primaryKey = empty($primaryKey)? "id": $primaryKey;
     }
 
     public function getEntity()
     {
         return $this->entity;
+    }
+
+    /**
+     * @param string $primaryKey
+     */
+    public function setPrimaryKey($primaryKey)
+    {
+        $this->primaryKey = $primaryKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrimaryKey()
+    {
+        return $this->primaryKey;
     }
 
     /**
