@@ -3,6 +3,7 @@
 namespace Silktide\Reposition\QueryBuilder;
 
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
+use Silktide\Reposition\Metadata\EntityMetadata;
 
 interface TokenSequencerInterface
 {
@@ -61,15 +62,14 @@ interface TokenSequencerInterface
     public function aggregate($type);
 
     /**
-     * @param string $entity - class name to include
-     * @param string $collection - collection to join with
-     * @param TokenSequencerInterface $on - conditions to join on
+     * @param EntityMetadata $childMetadata
      * @param string $collectionAlias
-     * @param string $type  "left", "right", "full" or "inner" (empty = "inner")
+     * @param string $parent
+     * @param TokenSequencerInterface $additionalFilters
      *
      * @return TokenSequencerInterface
      */
-    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT);
+    public function includeEntity(EntityMetadata $childMetadata, $collectionAlias = "", $parent = "", TokenSequencerInterface $additionalFilters = null);
 
     /**
      * @param string $collection - collection to join with

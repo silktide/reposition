@@ -5,6 +5,7 @@ namespace Silktide\Reposition\QueryBuilder;
 use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 use Silktide\Reposition\Exception\TokenParseExcaptoin;
+use Silktide\Reposition\Metadata\EntityMetadata;
 
 class TokenSequencer implements TokenSequencerInterface
 {
@@ -13,23 +14,19 @@ class TokenSequencer implements TokenSequencerInterface
 
     protected $type;
 
-    protected $entityName;
+    protected $entityMetadata;
 
     protected $includes = [];
 
     protected $querySequence = [];
 
-    protected $filtering = false;
+    protected $joinedTables = [];
 
-    protected $currentSection = "initial";
-
-    protected $requiresReset = true;
-
-    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, $entityName = "")
+    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, EntityMetadata $entityMetadata = null)
     {
         $this->tokenFactory = $tokenFactory;
         $this->setType($type);
-        $this->entityName = $entityName;
+        $this->entityMetadata = $entityMetadata;
     }
 
     protected function setType($type)
@@ -54,7 +51,7 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function isQuery()
     {
-        return ($this->type != self::TYPE_EXPRESSION);
+        return ($this->type != self::TYPE_EXPRESSION && !empty($this->entityMetadata));
     }
 
     /**
@@ -62,7 +59,12 @@ class TokenSequencer implements TokenSequencerInterface
      */
     public function getEntityName()
     {
-        return $this->entityName;
+        return $this->entityMetadata->getEntity();
+    }
+
+    public function getEntityMetadata()
+    {
+        return $this->entityMetadata;
     }
 
     public function getIncludes()
@@ -77,11 +79,6 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function getNextToken()
     {
-        // reset if required, then mark as having been reset
-        if ($this->requiresReset) {
-            reset($this->querySequence);
-            $this->requiresReset = false;
-        }
         // get the current token
         $token = current($this->querySequence);
         // advance the array pointer ready for the next call
@@ -128,7 +125,7 @@ class TokenSequencer implements TokenSequencerInterface
 
         switch ($type) {
             case "count":
-            case "sum":
+            case "total":
             case "maximum":
             case "mininum":
             case "average":
@@ -140,32 +137,104 @@ class TokenSequencer implements TokenSequencerInterface
         return $this;
     }
 
-    public function includeEntity($entity, $collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT)
+    public function includeEntity(EntityMetadata $childMetadata, $collectionAlias = "", $parent = "", TokenSequencerInterface $additionalFilters = null)
     {
         // check we're dealing with a query
         if (!$this->isQuery()) {
             throw new TokenParseException("Cannot include an entity on an expression sequence.");
         }
 
-        if (empty($collectionAlias)) {
-            if ($entity == $this->entityName) {
-                throw new TokenParseException("Cannot include the main entity (self referencing relationship) without a collection alias ");
+        // get data on the child entity
+        $childEntity = $childMetadata->getEntity();
+        $childCollection = $childMetadata->getCollection();
+        $childAlias = empty($collectionAlias)? $childCollection: $collectionAlias;
+
+        // determine which entity to join on (the parent)
+        $parentMetadata = $this->entityMetadata;
+        if (!empty($parent)) {
+            if (empty($this->includes[$parent])) {
+                throw new TokenParseException("Cannot include the entity '$childEntity'. The parent entity '$parent' has not yet been included");
             }
-            $collectionAlias = $collection;
+            $parentMetadata = $this->includes[$parent];
+            if ($parent == $parentMetadata->getEntity()) {
+                $parent = $parentMetadata->getCollections();
+            }
         }
 
-        // check for alias colisions
-        if (!empty($this->includes[$collectionAlias])) {
-            throw new TokenParseException("Cannot include entity '$entity'. The specified collection alias '$collectionAlias' is already in use");
+        // make sure we have a parent that we can use as a table name or alias
+        if (empty($parent) || $parent == $parentMetadata->getEntity()) {
+            $parent = $parentMetadata->getCollection();
         }
 
-        // add the include and create the join
-        $this->includes[$collectionAlias] = $entity;
-        return $this->join($collection, $on, $collectionAlias, $type, $type);
+        // get the relationship between the child and parent
+        $relationshipAlias = empty($collectionAlias)? $childEntity: $collectionAlias;
+        $relationship = $parentMetadata->getRelationship($relationshipAlias);
+        if (empty($relationship)) {
+            throw new TokenParseException("The parent entity '{$parentMetadata->getEntity()}' has no relationship defined for '$relationshipAlias'");
+        }
+
+        // find the fields we will need to use in the join condition
+        // we need the primary key and/or the parent field defined in the relationship
+        $parentKey = $parentMetadata->getPrimaryKey();
+        $parentField = $parent . "." . (
+                empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD])
+                ? $parentKey
+                : $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD]
+            );
+
+        // we nee dthe primary key and/or the child field defined in the relationship
+        $childKey = $childMetadata->getPrimaryKey();
+        $childField = $childAlias . "." . (
+            empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
+                ? $childKey
+                : $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
+            );
+
+        // many to many relationships require and extra join, so treat them differently
+        if ($relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
+            // create the join condition
+            $onClause = new TokenSequencer($this->tokenFactory);
+            $onClause->ref($parentField)->op("=")->ref($childField);
+            // if we have additional join filters, add them now
+            if (!empty($additionalFilters)) {
+                $onClause->andL()->mergeSequence($additionalFilters->getSequence());
+            }
+            // create the join
+            $this->join($childCollection, $onClause, $collectionAlias);
+
+        } else {
+            // many to many. Requires intermedary join table
+            $joinTable = $relationship[EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE];
+            // create the join condition from the parent to the intermediate
+            $parentToMany = new TokenSequencer($this->tokenFactory);
+            $parentToMany->ref($parentField)->op("=")->ref("{$joinTable}.{$parent}_id");
+
+            // create the join condition from the intermediate to the child, including any additional join filters
+            $manyToChild = new TokenSequencer($this->tokenFactory);
+            $manyToChild->ref("{$joinTable}.{$childAlias}_id")->op("=")->ref($childField);
+            if (!empty($additionalFilters)) {
+                $manyToChild->andL()->mergeSequence($additionalFilters->getSequence());
+            }
+
+            // create the joins
+            $this
+                ->join($joinTable, $parentToMany)
+                ->join($childCollection, $manyToChild, $collectionAlias);
+        }
+
+        // add the include
+        $this->includes[$childAlias] = $childMetadata;
+        return $this;
     }
 
     public function join($collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT)
     {
+        // check for collisions
+        $alias = empty($collectionAlias)? $collection: $collectionAlias;
+        if (!empty($this->joinedTables[$alias])) {
+            throw new TokenParseException("The collection '$alias' has already been joined");
+        }
+
         // validate join type
         switch ($type) {
             case "":
@@ -195,6 +264,9 @@ class TokenSequencer implements TokenSequencerInterface
         $this->addNewToSequence("join");
         $this->addNewToSequence("collection", $collection, $collectionAlias);
         $this->closure($on);
+
+        $this->joinedTables[$alias] = true;
+
         return $this;
     }
 

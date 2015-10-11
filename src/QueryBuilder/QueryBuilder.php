@@ -15,11 +15,11 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
     /**
      * SELECT, etc...
      *
-     * @param $entity
+     * @param EntityMetadata $entity
      *
      * @return TokenSequencer
      */
-    public function find($entity)
+    public function find(EntityMetadata $entity)
     {
         return new TokenSequencer($this->tokenFactory, self::TYPE_FIND, $entity);
     }
@@ -27,11 +27,11 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
     /**
      * INSERT, straightforward UPDATE
      *
-     * @param $entity
+     * @param EntityMetadata $entity
      *
      * @return TokenSequencer
      */
-    public function save($entity)
+    public function save(EntityMetadata $entity)
     {
         return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $entity);
     }
@@ -39,21 +39,21 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
     /**
      * Mass update e.g. UPDATE field = field + 1 WHERE ...
      *
-     * @param $entity
+     * @param EntityMetadata $entity
      *
      * @return TokenSequencer
      */
-    public function update($entity)
+    public function update(EntityMetadata $entity)
     {
         return new TokenSequencer($this->tokenFactory, self::TYPE_UPDATE, $entity);
     }
 
     /**
-     * @param $entity
+     * @param EntityMetadata $entity
      *
      * @return TokenSequencer
      */
-    public function delete($entity)
+    public function delete(EntityMetadata $entity)
     {
         return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $entity);
     }
