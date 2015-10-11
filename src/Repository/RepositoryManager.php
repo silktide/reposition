@@ -67,7 +67,8 @@ class RepositoryManager implements EntityMetadataProviderInterface
                     $this->repositoryCache[$entity] = new $repoFqcn(
                         $this->metadataFactory->create($entity),
                         $this->defaultQueryBuilder,
-                        $this->defaultStorage
+                        $this->defaultStorage,
+                        $this
                     );
                     break;
                 }
