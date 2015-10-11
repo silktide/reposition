@@ -197,6 +197,10 @@ class EntityMetadata
         return $this->relationships;
     }
 
+    public function getRelationship($entity) {
+        return empty($this->relationships[$entity])? null: $this->relationships[$entity];
+    }
+
     protected function getJoinTable($entity, array $metadata) {
         if (!isset($metadata[self::METADATA_RELATIONSHIP_JOIN_TABLE])) {
             throw new MetadataException("Cannot add many-to-many relationship metadata for '$entity' without specifying a join table");
