@@ -4,7 +4,7 @@ namespace Silktide\Reposition\QueryBuilder;
 
 use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
-use Silktide\Reposition\Exception\TokenParseExcaptoin;
+use Silktide\Reposition\Exception\TokenParseException;
 use Silktide\Reposition\Metadata\EntityMetadata;
 
 class TokenSequencer implements TokenSequencerInterface
@@ -157,7 +157,7 @@ class TokenSequencer implements TokenSequencerInterface
             }
             $parentMetadata = $this->includes[$parent];
             if ($parent == $parentMetadata->getEntity()) {
-                $parent = $parentMetadata->getCollections();
+                $parent = $parentMetadata->getCollection();
             }
         }
 
@@ -263,6 +263,7 @@ class TokenSequencer implements TokenSequencerInterface
         }
         $this->addNewToSequence("join");
         $this->addNewToSequence("collection", $collection, $collectionAlias);
+        $this->addNewToSequence("on");
         $this->closure($on);
 
         $this->joinedTables[$alias] = true;
