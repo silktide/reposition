@@ -169,8 +169,8 @@ class EntityMetadata
         switch ($type) {
             case self::RELATIONSHIP_TYPE_MANY_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_JOIN_TABLE] = $this->getJoinTable($entity, $metadata);
-                $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata);
-                $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata);
+                $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata, false);
+                $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata, false);
                 break;
             case self::RELATIONSHIP_TYPE_ONE_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata);

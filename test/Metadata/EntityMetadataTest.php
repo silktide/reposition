@@ -132,28 +132,10 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
                     $propField => "collection"
                 ]
             ],
-            [ // no our field for Many to Many
-                [
-                    $typeField => $m2m,
-                    $propField => "collection",
-                    $theirField => "field",
-                    $joinField => "table"
-                ]
-            ],
-            [ // no their field for Many to Many
-                [
-                    $typeField => $m2m,
-                    $propField => "collection",
-                    $ourField => "field",
-                    $joinField => "table"
-                ]
-            ],
             [ // no join table field for Many to Many
                 [
                     $typeField => $m2m,
-                    $propField => "collection",
-                    $ourField => "field",
-                    $theirField => "field"
+                    $propField => "collection"
                 ]
             ],
         ];
@@ -210,13 +192,13 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
             ],
             [ // One to Many
                 [
-                    $typeField => $o2o,
+                    $typeField => $o2m,
                     $theirField => "field"
                 ]
             ],
             [ // Many to Many
                 [
-                    $typeField => $o2o,
+                    $typeField => $m2m,
                     $ourField => "field",
                     $theirField => "field",
                     $joinField => "table"
