@@ -1,14 +1,8 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\QueryBuilder;
 
-use Silktide\Reposition\Query\FindQuery;
-use Silktide\Reposition\Query\InsertQuery;
-use Silktide\Reposition\Query\UpdateQuery;
-use Silktide\Reposition\Query\DeleteQuery;
-use Silktide\Reposition\Query\AggregationQuery;
+use Silktide\Reposition\Metadata\EntityMetadata;
 
 /**
  *
@@ -19,27 +13,27 @@ interface QueryBuilderInterface
     const PRIMARY_KEY = "id";
 
     /**
-     * @param string $entity
+     * @param EntityMetadata $entity
      * @return TokenSequencerInterface
      */
-    public function find($entity);
+    public function find(EntityMetadata $entity);
 
     /**
-     * @param string $entity
+     * @param EntityMetadata $entity
      * @return TokenSequencerInterface
      */
-    public function update($entity);
+    public function update(EntityMetadata $entity);
 
     /**
-     * @param string $entity
+     * @param EntityMetadata $entity
      * @return TokenSequencerInterface
      */
-    public function save($entity);
+    public function save(EntityMetadata $entity);
 
     /**
-     * @param string $entity
+     * @param EntityMetadata $entity
      * @return TokenSequencerInterface
      */
-    public function delete($entity);
+    public function delete(EntityMetadata $entity);
 
 } 

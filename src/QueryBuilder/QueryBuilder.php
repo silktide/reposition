@@ -2,6 +2,8 @@
 
 namespace Silktide\Reposition\QueryBuilder;
 
+use Silktide\Reposition\Metadata\EntityMetadata;
+
 /**
  *
  */

@@ -24,10 +24,11 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase {
     public function testQueryStarts($method, $expectedType)
     {
         $entity = "entity";
+        $metadata = \Mockery::mock("Silktide\\Reposition\\Metadata\\EntityMetadata")->shouldReceive("getEntity")->andReturn($entity)->getMock();
 
         $qb = new QueryBuilder($this->tokenFactory);
         /** @var TokenSequencerInterface $query */
-        $query = $qb->{$method}($entity);
+        $query = $qb->{$method}($metadata);
 
         $this->assertEquals($expectedType, $query->getType());
         $this->assertEquals($entity, $query->getEntityName());
