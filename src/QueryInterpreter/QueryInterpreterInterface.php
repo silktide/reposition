@@ -4,6 +4,7 @@ namespace Silktide\Reposition\QueryInterpreter;
 
 use Silktide\Reposition\Normaliser\NormaliserInterface;
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 
 /**
  *
@@ -21,5 +22,10 @@ interface QueryInterpreterInterface
      * @param NormaliserInterface $normaliser
      */
     public function setNormaliser(NormaliserInterface $normaliser);
+
+    /**
+     * @param EntityMetadataProviderInterface $provider
+     */
+    public function setEntityMetadataProvider(EntityMetadataProviderInterface $provider);
 
 } 

@@ -10,6 +10,8 @@ class EntityMetadata
     // metadata arraykeys
     const METADATA_FIELD_TYPE = "type";
     const METADATA_RELATIONSHIP_TYPE = "type";
+    const METADATA_RELATIONSHIP_ALIAS = "alias";
+    const METADATA_RELATIONSHIP_PROPERTY = "property";
     const METADATA_RELATIONSHIP_OUR_FIELD = "our field";
     const METADATA_RELATIONSHIP_THEIR_FIELD = "their field";
     const METADATA_RELATIONSHIP_JOIN_TABLE = "join table";
@@ -33,6 +35,16 @@ class EntityMetadata
     protected $entity;
 
     /**
+     * @var string
+     */
+    protected $primaryKey;
+
+    /**
+     * @var string
+     */
+    protected $collection;
+
+    /**
      * @var array
      */
     protected $fields = [];
@@ -44,15 +56,49 @@ class EntityMetadata
 
     /**
      * @param string $entity
+     * @param string $primaryKey
      */
-    public function construct($entity)
+    public function __construct($entity, $primaryKey = null)
     {
         $this->entity = $entity;
+        $this->primaryKey = empty($primaryKey)? "id": $primaryKey;
     }
 
     public function getEntity()
     {
         return $this->entity;
+    }
+
+    /**
+     * @param string $primaryKey
+     */
+    public function setPrimaryKey($primaryKey)
+    {
+        $this->primaryKey = $primaryKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrimaryKey()
+    {
+        return $this->primaryKey;
+    }
+
+    /**
+     * @param string $table
+     */
+    public function setCollection($table)
+    {
+        $this->collection = $table;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCollection()
+    {
+        return $this->collection;
     }
 
     public function addFieldMetadata($name, array $metadata)
@@ -111,13 +157,20 @@ class EntityMetadata
         if (!isset($metadata[self::METADATA_RELATIONSHIP_TYPE])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a relationship type");
         }
+        if (!isset($metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+            throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying the property of the parent entity that the relationship refers to");
+        }
+        if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+            throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
+        }
         $type = $metadata[self::METADATA_RELATIONSHIP_TYPE];
         $finalMetadata[self::METADATA_RELATIONSHIP_TYPE] = $type;
+        $finalMetadata[self::METADATA_RELATIONSHIP_PROPERTY] = $metadata[self::METADATA_RELATIONSHIP_PROPERTY];
         switch ($type) {
             case self::RELATIONSHIP_TYPE_MANY_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_JOIN_TABLE] = $this->getJoinTable($entity, $metadata);
-                $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata);
-                $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata);
+                $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata, false);
+                $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata, false);
                 break;
             case self::RELATIONSHIP_TYPE_ONE_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata);
@@ -127,6 +180,9 @@ class EntityMetadata
                 $finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD] = $this->getTheirField($entity, $metadata, false);
                 $finalMetadata[self::METADATA_RELATIONSHIP_OUR_FIELD] = $this->getOurField($entity, $metadata, empty($finalMetadata[self::METADATA_RELATIONSHIP_THEIR_FIELD]));
                 break;
+        }
+        if (!empty($metadata[self::METADATA_RELATIONSHIP_ALIAS])) {
+            $entity = $metadata[self::METADATA_RELATIONSHIP_ALIAS];
         }
         $this->relationships[$entity] = $finalMetadata;
     }
@@ -139,6 +195,10 @@ class EntityMetadata
     public function getRelationships()
     {
         return $this->relationships;
+    }
+
+    public function getRelationship($entity) {
+        return empty($this->relationships[$entity])? null: $this->relationships[$entity];
     }
 
     protected function getJoinTable($entity, array $metadata) {

@@ -2,6 +2,9 @@
 
 namespace Silktide\Reposition\QueryBuilder;
 
+use Silktide\Reposition\QueryBuilder\QueryToken\Token;
+use Silktide\Reposition\Metadata\EntityMetadata;
+
 interface TokenSequencerInterface
 {
 
@@ -13,6 +16,11 @@ interface TokenSequencerInterface
 
     const SORT_ASC = 1;
     const SORT_DESC = -1;
+
+    const JOIN_INNER = "inner";
+    const JOIN_LEFT = "left";
+    const JOIN_RIGHT = "right";
+    const JOIN_FULL = "full";
 
     /**
      * @return string
@@ -27,7 +35,12 @@ interface TokenSequencerInterface
     /**
      * @return string
      */
-    public function getCollectionName();
+    public function getEntityName();
+
+    /**
+     * @return array
+     */
+    public function getIncludes();
 
     /**
      * @return array
@@ -35,11 +48,38 @@ interface TokenSequencerInterface
     public function getSequence();
 
     /**
+     * Returns the next token in the sequence or false if the sequence has ended
+     *
+     * @return Token|bool
+     */
+    public function getNextToken();
+
+    /**
      * @param string $type
      *
      * @return TokenSequencerInterface
      */
     public function aggregate($type);
+
+    /**
+     * @param EntityMetadata $childMetadata
+     * @param string $collectionAlias
+     * @param string $parent
+     * @param TokenSequencerInterface $additionalFilters
+     *
+     * @return TokenSequencerInterface
+     */
+    public function includeEntity(EntityMetadata $childMetadata, $collectionAlias = "", $parent = "", TokenSequencerInterface $additionalFilters = null);
+
+    /**
+     * @param string $collection - collection to join with
+     * @param TokenSequencerInterface $on - conditions to join on
+     * @param string $collectionAlias
+     * @param string $type - "left", "right", "full" or "inner" (empty = "inner")
+     *
+     * @return TokenSequencerInterface
+     */
+    public function join($collection, TokenSequencerInterface $on, $collectionAlias = "", $type = self::JOIN_LEFT);
 
     /**
      * @return TokenSequencerInterface

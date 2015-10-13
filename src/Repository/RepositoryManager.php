@@ -3,12 +3,15 @@
 namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
+use Silktide\Reposition\Exception\MetadataException;
 use Silktide\Reposition\Storage\StorageInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
+use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 
 /**
  *
  */
-class RepositoryManager 
+class RepositoryManager implements EntityMetadataProviderInterface
 {
 
     protected $repositoryNamespaces = [];
@@ -17,9 +20,15 @@ class RepositoryManager
 
     protected $defaultStorage;
 
-    public function __construct(StorageInterface $storage, array $repositoryNamespaces, array $repositories = [])
+    protected $defaultQueryBuilder;
+
+    protected $metadataFactory;
+
+    public function __construct(StorageInterface $storage, QueryBuilderInterface $queryBuilder, EntityMetadataFactoryInterface $metadataFactory, array $repositoryNamespaces, array $repositories = [])
     {
         $this->defaultStorage = $storage;
+        $this->defaultQueryBuilder = $queryBuilder;
+        $this->metadataFactory = $metadataFactory;
         $this->repositoryNamespaces = $repositoryNamespaces;
         $this->repositoryNamespaces[] = ""; // for classes with no namespace
         foreach ($repositories as $repository) {
@@ -56,9 +65,10 @@ class RepositoryManager
                 $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
                 if (class_exists($repoFqcn)) {
                     $this->repositoryCache[$entity] = new $repoFqcn(
-                        $entity,
-                        $this->defaultStorage->getQueryBuilder(),
-                        $this->defaultStorage
+                        $this->metadataFactory->create($entity),
+                        $this->defaultQueryBuilder,
+                        $this->defaultStorage,
+                        $this
                     );
                     break;
                 }
@@ -70,6 +80,20 @@ class RepositoryManager
             }
         }
         return $this->repositoryCache[$entity];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadata($entity)
+    {
+        $repository = $this->getRepositoryFor($entity);
+
+        if (!$repository instanceof MetadataRepositoryInterface) {
+            throw new MetadataException("Cannot get metadata for '$entity', the repository class for the entity does not supply metadata information.");
+        }
+
+        return $repository->getEntityMetadata();
     }
 
 } 

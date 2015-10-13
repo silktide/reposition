@@ -90,7 +90,7 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
     public function testInvalidRelationshipMetadata(array $metadata, $errorPartial = "")
     {
         $entity = "test";
-        $entityMetadata = new EntityMetadata("entity");
+        $entityMetadata = new EntityMetadata("\\Silktide\\Reposition\\Metadata\\EntityMetadata");
         try {
             $entityMetadata->addRelationshipMetadata($entity, $metadata);
             $this->fail("Should have thrown an exception when trying to add invalid metadata");
@@ -104,6 +104,7 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
     public function invalidRelationshipMetadataProvider()
     {
         $typeField = EntityMetadata::METADATA_RELATIONSHIP_TYPE;
+        $propField = EntityMetadata::METADATA_RELATIONSHIP_PROPERTY;
         $ourField = EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD;
         $theirField = EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD;
         $joinField = EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE;
@@ -113,35 +114,28 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
         $m2m = EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY;
 
         return [
+            [ // no property field
+                [
+                    $typeField => $o2o,
+                    $theirField => "field"
+                ]
+            ],
             [ // no our/their field for One to One
                 [
                     $typeField => $o2o,
+                    $propField => "collection"
                 ]
             ],
             [ // no their field for One to Many
                 [
                     $typeField => $o2m,
-                ]
-            ],
-            [ // no our field for Many to Many
-                [
-                    $typeField => $m2m,
-                    $theirField => "field",
-                    $joinField => "table"
-                ]
-            ],
-            [ // no their field for Many to Many
-                [
-                    $typeField => $m2m,
-                    $ourField => "field",
-                    $joinField => "table"
+                    $propField => "collection"
                 ]
             ],
             [ // no join table field for Many to Many
                 [
                     $typeField => $m2m,
-                    $ourField => "field",
-                    $theirField => "field"
+                    $propField => "collection"
                 ]
             ],
         ];
@@ -154,8 +148,10 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
      */
     public function testValidRelationshipMetadata(array $metadata)
     {
+        $metadata[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY] = "collection";
+
         $entity = "test";
-        $entityMetadata = new EntityMetadata("entity");
+        $entityMetadata = new EntityMetadata("Silktide\\Reposition\\Metadata\\EntityMetadata");
         $entityMetadata->addRelationshipMetadata($entity, $metadata);
 
         $entities = $entityMetadata->getRelationships();
@@ -196,13 +192,13 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
             ],
             [ // One to Many
                 [
-                    $typeField => $o2o,
+                    $typeField => $o2m,
                     $theirField => "field"
                 ]
             ],
             [ // Many to Many
                 [
-                    $typeField => $o2o,
+                    $typeField => $m2m,
                     $ourField => "field",
                     $theirField => "field",
                     $joinField => "table"
