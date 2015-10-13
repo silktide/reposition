@@ -1,10 +1,10 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\QueryInterpreter;
+
 use Silktide\Reposition\Normaliser\NormaliserInterface;
-use Silktide\Reposition\Query\Query;
+use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 
 /**
  *
@@ -13,14 +13,19 @@ interface QueryInterpreterInterface
 {
 
     /**
-     * @param Query $query
+     * @param TokenSequencerInterface $query
      * @return CompiledQuery
      */
-    public function interpret(Query $query);
+    public function interpret(TokenSequencerInterface $query);
 
     /**
      * @param NormaliserInterface $normaliser
      */
     public function setNormaliser(NormaliserInterface $normaliser);
+
+    /**
+     * @param EntityMetadataProviderInterface $provider
+     */
+    public function setEntityMetadataProvider(EntityMetadataProviderInterface $provider);
 
 } 
