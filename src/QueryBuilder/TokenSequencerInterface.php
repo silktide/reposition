@@ -38,6 +38,11 @@ interface TokenSequencerInterface
     public function getEntityName();
 
     /**
+     * @return EntityMetadata
+     */
+    public function getEntityMetadata();
+
+    /**
      * @return array
      */
     public function getIncludes();
