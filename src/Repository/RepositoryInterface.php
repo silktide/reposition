@@ -20,18 +20,20 @@ interface RepositoryInterface
 
     /**
      * @param string|int $id
+     * @param bool $includeRelationships
      * @return object
      */
-    public function find($id);
+    public function find($id, $includeRelationships = null);
 
     /**
      * @param array $filter
      * @param array $sort
      * @param int $limit
      * @param array $options
+     * @param bool $includeRelationships
      * @return array
      */
-    public function filter(array $filter, array $sort = [], $limit = 0, array $options = []);
+    public function filter(array $filter, array $sort = [], $limit = 0, array $options = [], $includeRelationships = null);
 
     /**
      * @param object $entity

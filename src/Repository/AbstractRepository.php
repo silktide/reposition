@@ -45,6 +45,13 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected $metadataProvider;
 
     /**
+     * Flag to set if relationships are included by default
+     *
+     * @var bool
+     */
+    protected $includeRelationshipsByDefault = false;
+
+    /**
      * @param EntityMetadata $entityMetadata
      * @param QueryBuilderInterface $queryBuilder
      * @param StorageInterface $storage
@@ -99,10 +106,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     /**
      * {@inheritDoc}
      */
-    public function find($id)
+    public function find($id, $includeRelationships = null)
     {
-        $query = $this->queryBuilder->find($this->entityMetadata)
-            ->where()
+        $query = $this->queryBuilder->find($this->entityMetadata);
+        $this->addIncludes($query, $includeRelationships);
+        $query->where()
             ->ref(QueryBuilderInterface::PRIMARY_KEY)
             ->op("=")
             ->val($id);
@@ -112,9 +120,10 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     /**
      * {@inheritDoc}
      */
-    public function filter(array $filters, array $sort = [], $limit = 0, array $options = [])
+    public function filter(array $filters, array $sort = [], $limit = 0, array $options = [], $includeRelationships = null)
     {
         $query = $this->queryBuilder->find($this->entityMetadata);
+        $this->addIncludes($query, $includeRelationships);
 
         $this->createWhereFromFilters($query, $filters);
 
@@ -201,6 +210,16 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         }
         // filter last field
         $query->ref($lastField)->op("=")->val($lastValue);
+    }
+
+    protected function addIncludes(TokenSequencerInterface $query, $includeRelationships)
+    {
+        $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
+        if ($includeRelationships) {
+            foreach ($this->entityMetadata->getRelationships() as $alias => $metadata) {
+                $query->includeEntity($metadata, $alias);
+            }
+        }
     }
 
 } 
