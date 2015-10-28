@@ -3,7 +3,7 @@
 namespace Silktide\Reposition\Storage;
 
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
-use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 
 /**
  *
@@ -17,5 +17,15 @@ interface StorageInterface
      * @return object
      */
     public function query(TokenSequencerInterface $query, $entityClass);
+
+    /**
+     * @param EntityMetadataProviderInterface $provider
+     */
+    public function setEntityMetadataProvider(EntityMetadataProviderInterface $provider);
+
+    /**
+     * @return bool
+     */
+    public function hasEntityMetadataProvider();
 
 } 
