@@ -25,22 +25,7 @@ class Value extends Token
     public function __construct($type, $value)
     {
         $this->value = $value;
-        $this->setType($type);
-    }
-
-    protected function setType($type)
-    {
-        switch ($type) {
-            case self::TYPE_STRING:
-            case self::TYPE_INT:
-            case self::TYPE_FLOAT:
-            case self::TYPE_BOOL:
-            case self::TYPE_NULL:
-                $this->type = $type;
-                break;
-            default:
-                throw new QueryException("Invalid value type: '$type'");
-        }
+        $this->type = $type;
     }
 
     /**
