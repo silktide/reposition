@@ -15,6 +15,7 @@ class EntityMetadata
     const METADATA_RELATIONSHIP_OUR_FIELD = "our field";
     const METADATA_RELATIONSHIP_THEIR_FIELD = "their field";
     const METADATA_RELATIONSHIP_JOIN_TABLE = "join table";
+    const METADATA_ENTITY = "entity";
 
     // field types
     const FIELD_TYPE_STRING = "string";
@@ -164,6 +165,7 @@ class EntityMetadata
             throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
         }
         $type = $metadata[self::METADATA_RELATIONSHIP_TYPE];
+        $finalMetadata[self::METADATA_ENTITY] = $entity;
         $finalMetadata[self::METADATA_RELATIONSHIP_TYPE] = $type;
         $finalMetadata[self::METADATA_RELATIONSHIP_PROPERTY] = $metadata[self::METADATA_RELATIONSHIP_PROPERTY];
         switch ($type) {
