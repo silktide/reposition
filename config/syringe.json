@@ -1,63 +1,42 @@
 {
   "parameters": {
-    "mongo.server": "",
-    "mongo.dbName": "",
     "repository.namespaces": [],
-    "repository.instances": []
+    "repository.instances": [],
+
+    "tokenDefinitions": []
   },
 
   "services": {
-    "mongo.client": {
-      "class": "\\MongoClient",
-      "arguments": [
-        "%mongo.server%"
-      ]
-    },
-
-    "mongo.db": {
-      "class": "\\MongoDB",
-      "factoryService": "@mongo.client",
-      "factoryMethod": "selectDB",
-      "arguments": [
-        "%mongo.dbName%"
-      ]
-    },
 
     "queryBuilder": {
-      "class": "Silktide\\Reposition\\QueryBuilder\\QueryBuilder"
-    },
-
-    "mongo.interpreter": {
-      "class": "Silktide\\Reposition\\QueryInterpreter\\MongoQueryInterpreter"
-    },
-
-    "clay.hydrator": {
-      "class": "Silktide\\Reposition\\Hydrator\\ClayHydrator"
-    },
-
-    "mongo.normaliser": {
-      "class": "Silktide\\Reposition\\Normaliser\\MongoNormaliser"
-    },
-
-    "mongo.storage": {
-      "class": "Silktide\\Reposition\\Storage\\MongoStorage",
+      "class": "Silktide\\Reposition\\QueryBuilder\\QueryBuilder",
       "arguments": [
-        "@mongo.db",
-        "@mongo.interpreter",
-        "@clay.hydrator",
-        "@mongo.normaliser"
+        "@tokenFactory"
       ]
     },
 
-    "mongo.repositoryManager": {
+    "tokenFactory": {
+      "class": "Silktide\\Reposition\\QueryBuilder\\QueryToken\\TokenFactory"
+    },
+
+    "repositoryManager": {
       "class": "Silktide\\Reposition\\Repository\\RepositoryManager",
       "arguments": [
-        "@mongo.storage",
+        "@defaultStorage",
         "@queryBuilder",
+        "@defaultMetadataFactory",
         "%repository.namespaces%",
         "%repository.instances%"
       ]
+    },
+
+    "tokenParser": {
+      "class": "Silktide\\Reposition\\QueryBuilder\\TokenParser",
+      "arguments": [
+        "%tokenDefinitions%"
+      ]
     }
+
   }
 
 }
