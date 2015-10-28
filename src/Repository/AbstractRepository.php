@@ -62,6 +62,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $this->entityMetadata = $entityMetadata;
         $this->queryBuilder = $queryBuilder;
         $this->storage = $storage;
+        $this->metadataProvider = $metadataProvider;
         $this->configureMetadata();
     }
 
@@ -111,7 +112,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $query = $this->queryBuilder->find($this->entityMetadata);
         $this->addIncludes($query, $includeRelationships);
         $query->where()
-            ->ref(QueryBuilderInterface::PRIMARY_KEY)
+            ->ref($this->getCollectionName() . "." . QueryBuilderInterface::PRIMARY_KEY)
             ->op("=")
             ->val($id);
         return $this->doQuery($query);
@@ -216,7 +217,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
         if ($includeRelationships) {
-            foreach ($this->entityMetadata->getRelationships() as $alias => $metadata) {
+            foreach ($this->entityMetadata->getRelationships() as $alias => $relationship) {
+                $metadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
+                if ($alias == $metadata->getEntity()) {
+                    $alias = "";
+                }
                 $query->includeEntity($metadata, $alias);
             }
         }

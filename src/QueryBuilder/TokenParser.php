@@ -51,6 +51,15 @@ class TokenParser
                         break;
                     // boolean constraints
                     case "optional":
+                        if (!is_bool($value) && !is_string($value)) {
+                            throw new TokenDefinitionException("Error defining '$type'. '$constraint' must be a string or a boolean.");
+                        }
+                        break;
+                    case "flag":
+                        if (!is_string($value)) {
+                            throw new TokenDefinitionException("Error defining '$type'. '$constraint' must be a string.");
+                        }
+                        break;
                     case "multiple":
                         if (!is_bool($value)) {
                             throw new TokenDefinitionException("Error defining '$type'. '$constraint' must be a boolean.");
@@ -112,9 +121,18 @@ class TokenParser
     {
         $definition = $this->getDefinition($type);
 
+        $optionalFlags = [];
+
         foreach ($definition as $tokenDefinition) {
             $multiple = empty($tokenDefinition["multiple"])? false: $tokenDefinition["multiple"];
             $optional = empty($tokenDefinition["optional"])? false: $tokenDefinition["optional"];
+            if (!is_bool($optional)) {
+                // only process this if the flag has not been set. Otherwise, treat as required
+                if (empty($optionalFlags[$optional])) {
+                    continue;
+                }
+                $optional = false;
+            }
             $count = 0;
             $e = null;
             $definitionType = "";
@@ -181,6 +199,8 @@ class TokenParser
 
             if (!$optional && !$atLeastOnce) {
                 throw new TokenParseException("Did not find a sequence for '$type'." . (!empty($e)? " - " . $e->getMessage(): ""));
+            } elseif (!empty($definition["flag"])) {
+                $optionalFlags[$definition["flag"]] = true;
             }
         }
         return $position;
