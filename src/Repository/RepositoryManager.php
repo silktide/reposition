@@ -6,6 +6,7 @@ use Silktide\Reposition\Exception\RepositoryException;
 use Silktide\Reposition\Exception\MetadataException;
 use Silktide\Reposition\Storage\StorageInterface;
 use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
+use Silktide\Reposition\Metadata\EntityMetadataFactoryInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 
 /**
@@ -69,7 +70,7 @@ class RepositoryManager implements EntityMetadataProviderInterface
                 $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
                 if (class_exists($repoFqcn)) {
                     $this->repositoryCache[$entity] = new $repoFqcn(
-                        $this->metadataFactory->create($entity),
+                        $this->metadataFactory->createMetadata($entity),
                         $this->defaultQueryBuilder,
                         $this->defaultStorage,
                         $this
