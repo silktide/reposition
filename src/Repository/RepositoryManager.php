@@ -34,6 +34,10 @@ class RepositoryManager implements EntityMetadataProviderInterface
         foreach ($repositories as $repository) {
             $this->addRepository($repository);
         }
+
+        if (!$this->defaultStorage->hasEntityMetadataProvider()) {
+            $this->defaultStorage->setEntityMetadataProvider($this);
+        }
     }
 
     public function addRepository(RepositoryInterface $repository)
