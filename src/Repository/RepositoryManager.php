@@ -58,31 +58,38 @@ class RepositoryManager implements EntityMetadataProviderInterface
         }
         if (empty($this->repositoryCache[$entity])) {
             // try to autoload the repository based on entity class name
+            $repoFqcn = "";
 
-            // strip the namespace and add "Repository"
-            $entityClass = (strpos($entity, "\\") !== false)
-                ? substr($entity, strrpos($entity, "\\") + 1)
-                : $entity;
-            $repoClass = $entityClass . "Repository";
+            // first check in the same namespace as the entity
+            if (class_exists($entity . "Repository")) {
+                $repoFqcn = $entity . "Repository";
+            } else {
+                // Create the repo class name. Strip the entity namespace and add "Repository"
+                $entityClass = (strpos($entity, "\\") !== false)
+                    ? substr($entity, strrpos($entity, "\\") + 1)
+                    : $entity;
+                $repoClass = $entityClass . "Repository";
 
-            // check each registered repository namespace for the repository class
-            foreach ($this->repositoryNamespaces as $namespace) {
-                $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
-                if (class_exists($repoFqcn)) {
-                    $this->repositoryCache[$entity] = new $repoFqcn(
-                        $this->metadataFactory->createMetadata($entity),
-                        $this->defaultQueryBuilder,
-                        $this->defaultStorage,
-                        $this
-                    );
-                    break;
+                // check each registered repository namespace for the repository class
+                foreach ($this->repositoryNamespaces as $namespace) {
+                    $namespace = rtrim($namespace, "\\") . "\\";
+                    if (class_exists($namespace . $repoClass)) {
+                        $repoFqcn = $namespace . $repoClass;
+                        break;
+                    }
                 }
             }
 
-            // error on no match
-            if (empty($this->repositoryCache[$entity])) {
+            if (empty($repoFqcn)) {
                 throw new RepositoryException("Could not find a repository for the entity '$entity'");
             }
+
+            $this->repositoryCache[$entity] = new $repoFqcn(
+                $this->metadataFactory->createMetadata($entity),
+                $this->defaultQueryBuilder,
+                $this->defaultStorage,
+                $this
+            );
         }
         return $this->repositoryCache[$entity];
     }
