@@ -199,18 +199,26 @@ class EntityMetadata
         return $this->relationships;
     }
 
-    public function getRelationship($entity) {
+    public function getRelationship($entity)
+    {
         return empty($this->relationships[$entity])? null: $this->relationships[$entity];
     }
 
-    protected function getJoinTable($entity, array $metadata) {
+    public function hasRelationShip($entity)
+    {
+        return !empty($this->relationships[$entity]);
+    }
+
+    protected function getJoinTable($entity, array $metadata)
+    {
         if (!isset($metadata[self::METADATA_RELATIONSHIP_JOIN_TABLE])) {
             throw new MetadataException("Cannot add many-to-many relationship metadata for '$entity' without specifying a join table");
         }
         return $metadata[self::METADATA_RELATIONSHIP_JOIN_TABLE];
     }
 
-    protected function getTheirField($entity, array $metadata, $required = true) {
+    protected function getTheirField($entity, array $metadata, $required = true)
+    {
         if (empty($metadata[self::METADATA_RELATIONSHIP_THEIR_FIELD])) {
             if ($required) {
                 throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a the field representing the entity's foreign key");
@@ -220,7 +228,8 @@ class EntityMetadata
         return $metadata[self::METADATA_RELATIONSHIP_THEIR_FIELD];
     }
 
-    protected function getOurField($entity, array $metadata, $required = true) {
+    protected function getOurField($entity, array $metadata, $required = true)
+    {
         if (!isset($metadata[self::METADATA_RELATIONSHIP_OUR_FIELD])) {
             if ($required) {
                 throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a foreign key field");

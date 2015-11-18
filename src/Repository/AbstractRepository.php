@@ -2,6 +2,7 @@
 
 namespace Silktide\Reposition\Repository;
 
+use Silktide\Reposition\Exception\RepositoryException;
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
@@ -112,7 +113,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $query = $this->queryBuilder->find($this->entityMetadata);
         $this->addIncludes($query, $includeRelationships);
         $query->where()
-            ->ref($this->getCollectionName() . "." . QueryBuilderInterface::PRIMARY_KEY)
+            ->ref($this->getCollectionName() . "." . $this->entityMetadata->getPrimaryKey())
             ->op("=")
             ->val($id);
         return $this->doQuery($query);
@@ -155,9 +156,16 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->delete($this->entityMetadata)
             ->where()
-            ->ref(QueryBuilderInterface::PRIMARY_KEY)
+            ->ref($this->entityMetadata->getPrimaryKey())
             ->op("=")
             ->val($id);
+        return $this->doQuery($query);
+    }
+
+    public function deleteWithFilter(array $filters)
+    {
+        $query = $this->queryBuilder->delete($this->entityMetadata);
+        $this->createWhereFromFilters($query, $filters);
         return $this->doQuery($query);
     }
 
@@ -198,19 +206,47 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query->where();
         }
 
-        // we need to add "andL" to all but the last field, so
+        // we need to prepend "andL" to all but the first field, so
         // get the values for the last field and remove it from the array
-        end($filters);
-        $lastField = key($filters);
-        $lastValue = array_pop($filters);
         reset($filters);
+        $firstField = key($filters);
+        $firstValue = array_pop($filters);
+
+        // filter first field
+        $this->addComparisonToQuery($query, $firstField, $firstValue);
 
         // create filters
         foreach ($filters as $field => $value) {
-            $query->ref($field)->op("=")->val($value)->andL();
+            $query->andL();
+            $this->addComparisonToQuery($query, $field, $value);
         }
-        // filter last field
-        $query->ref($lastField)->op("=")->val($lastValue);
+
+    }
+
+    protected function addComparisonToQuery(TokenSequencerInterface $query, $field, $value, $prefixFieldWithCollection = false)
+    {
+        if ($this->entityMetadata->hasRelationShip($field)) {
+            $relationship = $this->entityMetadata->getRelationship($field);
+            if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
+                $ourField = null;
+            } else {
+                $ourField = empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD])
+                    ? null
+                    : $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD];
+            }
+
+            if (empty($ourField)) {
+                throw new RepositoryException("No field could be found for the relationship '$field'");
+            }
+
+            $field = $ourField;
+        }
+
+        if ($prefixFieldWithCollection) {
+            $field = $this->collectionName . "." . $field;
+        }
+
+        $query->ref($field)->op("=")->val($value);
     }
 
     protected function addIncludes(TokenSequencerInterface $query, $includeRelationships)
