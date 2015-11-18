@@ -2,6 +2,7 @@
 
 namespace Silktide\Reposition\Repository;
 
+use Silktide\Reposition\Exception\RepositoryException;
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
@@ -112,7 +113,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $query = $this->queryBuilder->find($this->entityMetadata);
         $this->addIncludes($query, $includeRelationships);
         $query->where()
-            ->ref($this->getCollectionName() . "." . QueryBuilderInterface::PRIMARY_KEY)
+            ->ref($this->getCollectionName() . "." . $this->entityMetadata->getPrimaryKey())
             ->op("=")
             ->val($id);
         return $this->doQuery($query);
@@ -155,7 +156,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->delete($this->entityMetadata)
             ->where()
-            ->ref(QueryBuilderInterface::PRIMARY_KEY)
+            ->ref($this->entityMetadata->getPrimaryKey())
             ->op("=")
             ->val($id);
         return $this->doQuery($query);
