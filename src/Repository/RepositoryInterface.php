@@ -48,6 +48,11 @@ interface RepositoryInterface
     public function delete($id);
 
     /**
+     * @param array $filters
+     */
+    public function deleteWithFilter(array $filters);
+
+    /**
      * Aggregation / Grouping
      *
      * @param array $conditions
