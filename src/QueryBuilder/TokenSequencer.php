@@ -16,17 +16,30 @@ class TokenSequencer implements TokenSequencerInterface
 
     protected $entityMetadata;
 
+    protected $options;
+
     protected $includes = [];
 
     protected $querySequence = [];
 
     protected $joinedTables = [];
 
-    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, EntityMetadata $entityMetadata = null)
+    public function __construct(TokenFactory $tokenFactory, $type = self::TYPE_EXPRESSION, EntityMetadata $entityMetadata = null, array $options = [])
     {
         $this->tokenFactory = $tokenFactory;
         $this->setType($type);
         $this->entityMetadata = $entityMetadata;
+        $this->options = $options;
+    }
+
+    public function setOption($option, $value)
+    {
+        $this->options[$option] = $value;
+    }
+
+    public function getOptions()
+    {
+        return $this->options;
     }
 
     protected function setType($type)

@@ -26,9 +26,10 @@ interface QueryBuilderInterface
 
     /**
      * @param EntityMetadata $entity
+     * @param array $options
      * @return TokenSequencerInterface
      */
-    public function save(EntityMetadata $entity);
+    public function save(EntityMetadata $entity, array $options = []);
 
     /**
      * @param EntityMetadata $entity

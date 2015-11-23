@@ -15,6 +15,8 @@ use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 abstract class AbstractRepository implements RepositoryInterface, MetadataRepositoryInterface
 {
 
+    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23000";
+
     /**
      * @var EntityMetadata
      */
@@ -145,8 +147,21 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function save($entity, array $options = [])
     {
-        $query = $this->queryBuilder->save($this->entityMetadata)->entity($entity);
-        return $this->doQuery($query, false);
+        $query = $this->queryBuilder->save($this->entityMetadata, $options)->entity($entity);
+        try {
+            return $this->doQuery($query, false);
+        } catch (\PDOException $e) {
+            $pkMetadata = $this->entityMetadata->getPrimaryKeyMetadata();
+            // if this entity has an auto incrementing PK, or the error is not about PK conflicts, re-throw the error
+            if ($pkMetadata[EntityMetadata::METADATA_FIELD_AUTO_INCREMENTING] == true || $e->errorInfo[0] != self::ANSI_DUPLICATE_KEY_ERROR_CODE) {
+                throw $e;
+            }
+
+            // this is a duplicate key on a collection with a PK that does not auto increment.
+            // force the save to be an update
+            $query->setOption("saveType", "update");
+            return $this->doQuery($query, false);
+        }
     }
 
     /**
@@ -159,7 +174,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             ->ref($this->entityMetadata->getPrimaryKey())
             ->op("=")
             ->val($id);
-        return $this->doQuery($query);
+        return $this->doQuery($query, false);
     }
 
     public function deleteWithFilter(array $filters)
