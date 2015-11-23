@@ -7,8 +7,14 @@ use Silktide\Reposition\Exception\MetadataException;
 class EntityMetadata
 {
 
-    // metadata arraykeys
+    // metadata array keys
     const METADATA_FIELD_TYPE = "type";
+    const METADATA_FIELD_AUTO_INCREMENTING = "auto incrementing";
+
+    const METADATA_INDEX_TYPE = "index type";
+    const METADATA_INDEX_NAME = "index name";
+    const METADATA_INDEX_FIELDS = "index fields";
+
     const METADATA_RELATIONSHIP_TYPE = "type";
     const METADATA_RELATIONSHIP_ALIAS = "alias";
     const METADATA_RELATIONSHIP_PROPERTY = "property";
@@ -24,6 +30,11 @@ class EntityMetadata
     const FIELD_TYPE_BOOL = "bool";
     const FIELD_TYPE_ARRAY = "array";
     const FIELD_TYPE_DATETIME = "datetime";
+
+    // key types
+    const FIELD_INDEX_TYPE_NONE = "none";
+    const FIELD_INDEX_TYPE_PRIMARY = "primary";
+    const FIELD_INDEX_TYPE_UNIQUE = "unique";
 
     // relationship types
     const RELATIONSHIP_TYPE_ONE_TO_ONE = "one to one";
@@ -86,6 +97,20 @@ class EntityMetadata
         return $this->primaryKey;
     }
 
+    public function getPrimaryKeyMetadata()
+    {
+        $fieldMetadata = !empty($this->fields[$this->primaryKey])
+            ? $this->fields[$this->primaryKey]
+            : [self::METADATA_FIELD_TYPE => self::FIELD_TYPE_INT]; // primary keys default to integer
+
+        if (!isset($fieldMetadata[self::METADATA_FIELD_AUTO_INCREMENTING])) {
+            // primary keys are auto incrementing by default
+            $fieldMetadata[self::METADATA_FIELD_AUTO_INCREMENTING] = true;
+        }
+
+        return $fieldMetadata;
+    }
+
     /**
      * @param string $table
      */
@@ -110,6 +135,9 @@ class EntityMetadata
                 case self::METADATA_FIELD_TYPE:
                     $this->validateFieldType($name, $value);
                     $finalMetadata[self::METADATA_FIELD_TYPE] = $value;
+                    break;
+                case self::METADATA_FIELD_AUTO_INCREMENTING:
+                    $finalMetadata[self::METADATA_FIELD_AUTO_INCREMENTING] = (bool) $value;
                     break;
             }
         }

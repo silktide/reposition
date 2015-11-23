@@ -10,7 +10,12 @@ use Silktide\Reposition\Metadata\EntityMetadata;
 class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
 {
 
+    protected $options = [];
 
+    public function getOptions()
+    {
+        return $this->options;
+    }
 
     ////////// QUERY START METHODS //////////
 
@@ -30,12 +35,13 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
      * INSERT, straightforward UPDATE
      *
      * @param EntityMetadata $entity
+     * @param array $options
      *
      * @return TokenSequencer
      */
-    public function save(EntityMetadata $entity)
+    public function save(EntityMetadata $entity, array $options = [])
     {
-        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $entity);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $entity, $options);
     }
 
     /**

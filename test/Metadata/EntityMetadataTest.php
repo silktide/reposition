@@ -207,5 +207,61 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
         ];
     }
 
+    /**
+     * @dataProvider pkMetadataProvider
+     *
+     * @param $fieldMetadata
+     * @param $expectedMetadata
+     */
+    public function testPublicKeyMetadata($fieldMetadata, $expectedMetadata)
+    {
+        $pk = "id";
+        $metadata = new EntityMetadata("blah");
+        $metadata->setPrimaryKey($pk);
+        if (!is_null($fieldMetadata)) {
+            $metadata->addFieldMetadata($pk, $fieldMetadata);
+        }
+
+        $pkMetadata = $metadata->getPrimaryKeyMetadata();
+        foreach ($expectedMetadata as $field => $value) {
+            $this->assertEquals($value, $pkMetadata[$field]);
+        }
+    }
+
+    public function pkMetadataProvider()
+    {
+        $type = EntityMetadata::METADATA_FIELD_TYPE;
+        $autoInc = EntityMetadata::METADATA_FIELD_AUTO_INCREMENTING;
+
+        return [
+            [ #0 no field metadata exists for the PK
+                null,
+                [
+                    $type => EntityMetadata::FIELD_TYPE_INT,
+                    $autoInc => true
+                ]
+            ],
+            [ #1 no auto increment value specified
+                [
+                    $type => EntityMetadata::FIELD_TYPE_FLOAT
+                ],
+                [
+                    $type => EntityMetadata::FIELD_TYPE_FLOAT,
+                    $autoInc => true
+                ]
+            ],
+            [ #2 auto increment value set
+                [
+                    $type => EntityMetadata::FIELD_TYPE_STRING,
+                    $autoInc => false
+                ],
+                [
+                    $type => EntityMetadata::FIELD_TYPE_STRING,
+                    $autoInc => false
+                ]
+            ],
+        ];
+    }
+
 }
  
