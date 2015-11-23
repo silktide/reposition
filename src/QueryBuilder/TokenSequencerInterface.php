@@ -23,6 +23,17 @@ interface TokenSequencerInterface
     const JOIN_FULL = "full";
 
     /**
+     * @param string $option
+     * @param mixed $value
+     */
+    public function setOption($option, $value);
+
+    /**
+     * @return array
+     */
+    public function getOptions();
+
+    /**
      * @return string
      */
     public function getType();
