@@ -153,7 +153,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         } catch (\PDOException $e) {
             $pkMetadata = $this->entityMetadata->getPrimaryKeyMetadata();
             // if this entity has an auto incrementing PK, or the error is not about PK conflicts, re-throw the error
-            if ($pkMetadata[EntityMetadata::METADATA_FIELD_AUTO_INCREMENTING] == true || !$e->errorInfo[0] == self::ANSI_DUPLICATE_KEY_ERROR_CODE) {
+            if ($pkMetadata[EntityMetadata::METADATA_FIELD_AUTO_INCREMENTING] == true || $e->errorInfo[0] != self::ANSI_DUPLICATE_KEY_ERROR_CODE) {
                 throw $e;
             }
 
