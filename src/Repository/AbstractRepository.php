@@ -208,6 +208,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
+        $query->resetSequence();
         return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
     }
 
