@@ -90,6 +90,11 @@ class TokenSequencer implements TokenSequencerInterface
         return $this->querySequence;
     }
 
+    public function resetSequence()
+    {
+        reset($this->querySequence);
+    }
+
     public function getNextToken()
     {
         // get the current token

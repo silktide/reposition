@@ -63,6 +63,8 @@ interface TokenSequencerInterface
      */
     public function getSequence();
 
+    public function resetSequence();
+
     /**
      * Returns the next token in the sequence or false if the sequence has ended
      *

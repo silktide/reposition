@@ -15,7 +15,7 @@ use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 abstract class AbstractRepository implements RepositoryInterface, MetadataRepositoryInterface
 {
 
-    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23000";
+    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23505";
 
     /**
      * @var EntityMetadata
@@ -208,6 +208,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
+        $query->resetSequence();
         return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
     }
 
