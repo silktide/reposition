@@ -15,7 +15,7 @@ use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 abstract class AbstractRepository implements RepositoryInterface, MetadataRepositoryInterface
 {
 
-    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23000";
+    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23505";
 
     /**
      * @var EntityMetadata
