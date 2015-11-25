@@ -38,6 +38,7 @@ class EntityMetadata
 
     // relationship types
     const RELATIONSHIP_TYPE_ONE_TO_ONE = "one to one";
+    const RELATIONSHIP_TYPE_MANY_TO_ONE = "one to one"; // "many to one" is the same a "one to one" from a child entity's point of view
     const RELATIONSHIP_TYPE_ONE_TO_MANY = "one to many";
     const RELATIONSHIP_TYPE_MANY_TO_MANY = "many to many";
 
