@@ -227,7 +227,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         // get the values for the last field and remove it from the array
         reset($filters);
         $firstField = key($filters);
-        $firstValue = array_pop($filters);
+        $firstValue = array_shift($filters);
 
         // filter first field
         $this->addComparisonToQuery($query, $firstField, $firstValue);
