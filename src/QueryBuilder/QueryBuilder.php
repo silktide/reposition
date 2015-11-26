@@ -66,6 +66,14 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
         return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $entity);
     }
 
+    /**
+     * @return TokenSequencer
+     */
+    public function expression()
+    {
+        return new TokenSequencer($this->tokenFactory, self::TYPE_EXPRESSION);
+    }
+
     ////////// OVERRIDE TokenSequencer METHODS TO PREVENT INVALID USAGE //////////
 
     public function getType()

@@ -37,4 +37,9 @@ interface QueryBuilderInterface
      */
     public function delete(EntityMetadata $entity);
 
+    /**
+     * @return TokenSequencerInterface
+     */
+    public function expression();
+
 } 

@@ -49,8 +49,9 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
     /**
      * Flag to set if relationships are included by default
+     * Alternatively, an array selecting the relationships to include by default
      *
-     * @var bool
+     * @var bool|array
      */
     protected $includeRelationshipsByDefault = false;
 
@@ -226,7 +227,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         // get the values for the last field and remove it from the array
         reset($filters);
         $firstField = key($filters);
-        $firstValue = array_pop($filters);
+        $firstValue = array_shift($filters);
 
         // filter first field
         $this->addComparisonToQuery($query, $firstField, $firstValue);
@@ -268,8 +269,15 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected function addIncludes(TokenSequencerInterface $query, $includeRelationships)
     {
         $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
-        if ($includeRelationships) {
-            foreach ($this->entityMetadata->getRelationships() as $alias => $relationship) {
+        if (!empty($includeRelationships)) {
+            $relationships = $this->entityMetadata->getRelationships();
+
+            // if includeRelationships is an array, filter out relationships not in the array
+            if (is_array($includeRelationships)) {
+                $relationships = array_intersect_key($relationships, array_flip($includeRelationships));
+            }
+
+            foreach ($relationships as $alias => $relationship) {
                 $metadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
                 if ($alias == $metadata->getEntity()) {
                     $alias = "";
