@@ -34,7 +34,13 @@ class CompiledQuery
     protected $query = "";
 
     /**
+     * @var string
+     */
+    protected $primaryKeySequence = "";
+
+    /**
      * @param array $arguments
+     * @return $this
      */
     public function setArguments(array $arguments)
     {
@@ -52,6 +58,7 @@ class CompiledQuery
 
     /**
      * @param array $calls
+     * @return $this
      */
     public function setCalls(array $calls)
     {
@@ -64,6 +71,7 @@ class CompiledQuery
 
     /**
      * @param array $call
+     * @return $this
      * @throws \InvalidArgumentException
      */
     public function addCall(array $call)
@@ -86,6 +94,7 @@ class CompiledQuery
 
     /**
      * @param string $method
+     * @return $this
      */
     public function setMethod($method)
     {
@@ -103,6 +112,7 @@ class CompiledQuery
 
     /**
      * @param string $collection
+     * @return $this
      */
     public function setCollection($collection)
     {
@@ -120,6 +130,7 @@ class CompiledQuery
 
     /**
      * @param string $query
+     * @return $this
      */
     public function setQuery($query)
     {
@@ -133,6 +144,24 @@ class CompiledQuery
     public function getQuery()
     {
         return $this->query;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrimaryKeySequence()
+    {
+        return $this->primaryKeySequence;
+    }
+
+    /**
+     * @param string $primaryKeySequence
+     * @return $this
+     */
+    public function setPrimaryKeySequence($primaryKeySequence)
+    {
+        $this->primaryKeySequence = $primaryKeySequence;
+        return $this;
     }
 
 }
