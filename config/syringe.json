@@ -35,6 +35,10 @@
       "arguments": [
         "%tokenDefinitions%"
       ]
+    },
+
+    "collectionFactory": {
+      "class": "Silktide\\Reposition\\Collection\\CollectionFactory"
     }
 
   }
