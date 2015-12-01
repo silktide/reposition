@@ -34,6 +34,7 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     public function testAdding()
     {
         $collection = new Collection([$this->entity1]);
+        $collection->setChangeTracking();
 
         // add an entity
         $collection->add($this->entity2);
@@ -53,6 +54,7 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     public function testRemoving()
     {
         $collection = new Collection([$this->entity1, $this->entity2]);
+        $collection->setChangeTracking();
         $this->assertEquals(2, $collection->count(), "Check collection set up correctly");
 
         // remove an entity
@@ -77,6 +79,7 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->entity3->property = 3;
 
         $collection = new Collection([$this->entity1, $this->entity2, $this->entity3]);
+        $collection->setChangeTracking();
         $this->assertEquals(3, $collection->count());
 
         // remove by property name
