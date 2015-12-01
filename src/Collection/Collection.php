@@ -15,6 +15,8 @@ class Collection implements \Iterator
 
     protected $removed = [];
 
+    protected $trackChanges = false;
+
     public function __construct(array $entities = [])
     {
         $this->entities = $entities;
@@ -29,7 +31,7 @@ class Collection implements \Iterator
         }
 
         $this->entities[] = $entity;
-        $this->added[] = $entity;
+        $this->track("add", $entity);
     }
 
     public function remove($entity)
@@ -40,7 +42,7 @@ class Collection implements \Iterator
             return;
         }
         unset($this->entities[$index]);
-        $this->removed[] = $entity;
+        $this->track("remove", $entity);
     }
 
     public function removeBy($identifier, $value)
@@ -61,9 +63,22 @@ class Collection implements \Iterator
             }
             if ($entity->{$getter}() == $value) {
                 unset($this->entities[$i]);
-                $this->removed[] = $entity;
+                $this->track("remove", $entity);
             }
         }
+    }
+
+    public function clear()
+    {
+        if ($this->trackChanges) {
+            $this->removed = array_merge($this->removed, $this->entities);
+        }
+        $this->entities = [];
+    }
+
+    public function setChangeTracking($track = true)
+    {
+        $this->trackChanges = (bool) $track;
     }
 
     public function getAddedEntities()
@@ -124,5 +139,18 @@ class Collection implements \Iterator
         reset($this->entities);
     }
 
+    protected function track($action, $entity)
+    {
+        if ($this->trackChanges) {
+            switch ($action) {
+                case "add":
+                    $this->added[] = $entity;
+                    break;
+                case "remove":
+                    $this->removed[] = $entity;
+                    break;
+            }
+        }
+    }
 
 }
