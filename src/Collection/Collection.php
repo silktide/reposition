@@ -68,6 +68,14 @@ class Collection implements \Iterator
         }
     }
 
+    public function clear()
+    {
+        if ($this->trackChanges) {
+            $this->removed = array_merge($this->removed, $this->entities);
+        }
+        $this->entities = [];
+    }
+
     public function setChangeTracking($track = true)
     {
         $this->trackChanges = (bool) $track;
