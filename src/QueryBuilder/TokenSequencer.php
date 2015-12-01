@@ -173,6 +173,7 @@ class TokenSequencer implements TokenSequencerInterface
             if (empty($this->includes[$parent])) {
                 throw new TokenParseException("Cannot include the entity '$childEntity'. The parent entity '$parent' has not yet been included");
             }
+            /** @var EntityMetadata $parentMetadata */
             $parentMetadata = $this->includes[$parent];
             if ($parent == $parentMetadata->getEntity()) {
                 $parent = $parentMetadata->getCollection();
@@ -200,7 +201,7 @@ class TokenSequencer implements TokenSequencerInterface
                 : $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD]
             );
 
-        // we nee dthe primary key and/or the child field defined in the relationship
+        // we need the primary key and/or the child field defined in the relationship
         $childKey = $childMetadata->getPrimaryKey();
         $childField = $childAlias . "." . (
             empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
@@ -208,7 +209,7 @@ class TokenSequencer implements TokenSequencerInterface
                 : $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
             );
 
-        // many to many relationships require and extra join, so treat them differently
+        // many to many relationships require an extra join, so treat them differently
         if ($relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
             // create the join condition
             $onClause = new TokenSequencer($this->tokenFactory);
@@ -221,7 +222,7 @@ class TokenSequencer implements TokenSequencerInterface
             $this->join($childCollection, $onClause, $collectionAlias);
 
         } else {
-            // many to many. Requires intermedary join table
+            // many to many. Requires intermediary join table
             $joinTable = $relationship[EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE];
             // create the join condition from the parent to the intermediate
             $parentToMany = new TokenSequencer($this->tokenFactory);
@@ -356,6 +357,8 @@ class TokenSequencer implements TokenSequencerInterface
 
     /**
      * wraps the following expression in parentheses to isolate it
+     * @param TokenSequencer|Token|mixed $content
+     * @return $this
      */
     public function closure($content = null)
     {
