@@ -10,6 +10,8 @@ class EntityMetadata
     // metadata array keys
     const METADATA_FIELD_TYPE = "type";
     const METADATA_FIELD_AUTO_INCREMENTING = "auto incrementing";
+    const METADATA_FIELD_GETTER = "getter";
+    const METADATA_FIELD_SETTER = "setter";
 
     const METADATA_INDEX_TYPE = "index type";
     const METADATA_INDEX_NAME = "index name";
@@ -140,6 +142,11 @@ class EntityMetadata
                 case self::METADATA_FIELD_AUTO_INCREMENTING:
                     $finalMetadata[self::METADATA_FIELD_AUTO_INCREMENTING] = (bool) $value;
                     break;
+                case self::METADATA_FIELD_GETTER:
+                case self::METADATA_FIELD_SETTER:
+                    $this->validateClassMethod($value, $type);
+                    $finalMetadata[$type] = $value;
+                    break;
             }
         }
         if (empty($finalMetadata)) {
@@ -170,6 +177,13 @@ class EntityMetadata
                 break;
             default:
                 throw new MetadataException("The field type metadata for '$name' is invalid: '$type'");
+        }
+    }
+
+    protected function validateClassMethod($method, $type)
+    {
+        if (!method_exists($this->entity, $method)) {
+            throw new MetadataException("The $type method '$method' does not exist for the entity '{$this->entity}'");
         }
     }
 
