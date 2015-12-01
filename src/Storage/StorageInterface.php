@@ -11,6 +11,8 @@ use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 interface StorageInterface
 {
 
+    const NEW_INSERT_ID_RETURN_FIELD = "pk";
+
     /**
      * @param TokenSequencerInterface $query
      * @param string $entityClass
