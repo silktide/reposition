@@ -96,11 +96,15 @@ class Collection implements \Iterator
         return !empty($this->added) || !empty($this->removed);
     }
 
-    public function toArray()
+    public function toArray($toArrayEntities = true)
     {
         $return = [];
+        $methodExists = null;
         foreach ($this->entities as $entity) {
-            $return[] = method_exists($entity, "toArray")
+            if ($methodExists == null) {
+                $methodExists = method_exists($entity, "toArray");
+            }
+            $return[] = $toArrayEntities && $methodExists
                 ? $entity->toArray()
                 : $entity;
         }
