@@ -296,8 +296,8 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         // generate the field names used on this table and create field metadata for them
         $intermediaryOurField = $this->entityMetadata->getCollection() . "_" . $ourField;
         $intermediaryTheirField = $childMetadata->getCollection() . "_" . $theirField;
-        $intermediaryMetadata->addFieldMetadata($intermediaryOurField, []);
-        $intermediaryMetadata->addFieldMetadata($intermediaryTheirField, []);
+        $intermediaryMetadata->addFieldMetadata($intermediaryOurField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
+        $intermediaryMetadata->addFieldMetadata($intermediaryTheirField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
 
         // process added and removed children
         $added = $collection->getAddedEntities();
