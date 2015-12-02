@@ -393,7 +393,7 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function op($value)
     {
-        $this->addNewToSequence("operator", $value);
+        $this->addNewToSequence("operator", strtolower($value));
         return $this;
     }
 
