@@ -266,11 +266,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             // TODO: replace this with a "list" token
             // Create the IN clause so we can add it to the query
             $inClause = $this->queryBuilder->expression();
-            // if we need to add an operator, separate the first child and add it first
-            //$firstChild = array_shift($update["entities"]);
-            //$inClause->val($childMetadata->getEntityValue($firstChild, $childPk));
             foreach ($update["entities"] as $child) {
-                //$inClause->op(","); // add the operator before the next value
                 $inClause->val($childMetadata->getEntityValue($child, $childPk));
             }
             $query->closure($inClause);
@@ -332,11 +328,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             // TODO: replace this with a "list"
             // Create the IN clause so we can add it to the query
             $inClause = $this->queryBuilder->expression();
-            // if we need to add an operator, separate the first child and add it first
-            //$firstChild = array_shift($removed);
-            //$inClause->val($childMetadata->getEntityValue($firstChild, $theirField));
             foreach ($removed as $child) {
-                //$inClause->op(","); // add the operator before the next value
                 $inClause->val($childMetadata->getEntityValue($child, $theirField));
             }
             $delete->closure($inClause);
