@@ -235,6 +235,9 @@ class EntityMetadata
     public function addRelationshipMetadata($entity, $metadata)
     {
         $finalMetadata = [];
+        if (!class_exists($entity)) {
+            throw new MetadataException("The entity class '$entity' does not exist");
+        }
         if (!isset($metadata[self::METADATA_RELATIONSHIP_TYPE])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a relationship type");
         }
