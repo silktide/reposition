@@ -114,6 +114,31 @@ class EntityMetadata
         return $fieldMetadata;
     }
 
+    public function setEntityValue($entity, $property, $value)
+    {
+        return $this->callPropertyMethod($entity, $property, self::METADATA_FIELD_SETTER, [$value]);
+    }
+
+    public function getEntityValue($entity, $property)
+    {
+        return $this->callPropertyMethod($entity, $property, self::METADATA_FIELD_GETTER);
+    }
+
+    protected function callPropertyMethod($entity, $property, $methodType, $args = [])
+    {
+        if (empty($this->fields[$property])) {
+            throw new MetadataException("The field '$property' for the entity '{$this->entity}' has no metadata");
+        }
+
+        $propertyMetadata = $this->fields[$property];
+        if (empty($propertyMetadata[$methodType])) {
+            throw new MetadataException("The field '$property' has no $methodType information set");
+        }
+
+        $method = $propertyMetadata[$methodType];
+        return call_user_func_array([$entity, $method], $args);
+    }
+
     /**
      * @param string $table
      */
