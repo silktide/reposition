@@ -107,4 +107,38 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $collection->removeBy("wtf", 1);
     }
 
+    public function testDeduping()
+    {
+        // test adding then removing
+        $collection = new Collection();
+        $collection->setChangeTracking();
+
+        $collection->add($this->entity1);
+        $collection->add($this->entity2);
+        $collection->remove($this->entity1);
+
+        $added = $collection->getAddedEntities();
+        $this->assertCount(1, $added, "Check the added entity array only has one entry");
+        $this->assertCount(0, $collection->getRemovedEntities(), "Check the removed entity array has no entries");
+        $this->assertSame($this->entity2, array_pop($added));
+
+        // test removing then adding
+        $collection = new Collection();
+        $collection->add($this->entity1);
+        $collection->add($this->entity2);
+        $collection->setChangeTracking();
+
+        $collection->remove($this->entity1);
+        $collection->remove($this->entity2);
+        $collection->add($this->entity2);
+        $collection->add($this->entity3);
+
+        $added = $collection->getAddedEntities();
+        $removed = $collection->getRemovedEntities();
+        $this->assertCount(1, $added, "Check the added entity array only has one entry");
+        $this->assertCount(1, $removed, "Check the removed entity array has no entries");
+        $this->assertSame($this->entity3, array_pop($added));
+        $this->assertSame($this->entity1, array_pop($removed));
+    }
+
 }

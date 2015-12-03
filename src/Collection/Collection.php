@@ -148,12 +148,22 @@ class Collection implements \Iterator
         if ($this->trackChanges) {
             switch ($action) {
                 case "add":
-                    $this->added[] = $entity;
+                    $this->dedupeTrackingArrays("added", "removed", $entity);
                     break;
                 case "remove":
-                    $this->removed[] = $entity;
+                    $this->dedupeTrackingArrays("removed", "added", $entity);
                     break;
             }
+        }
+    }
+
+    protected function dedupeTrackingArrays($one, $two, $entity)
+    {
+        $index = array_search($entity, $this->{$two});
+        if ($index !== false) {
+            unset($this->{$two}[$index]);
+        } else {
+            $this->{$one}[] = $entity;
         }
     }
 
