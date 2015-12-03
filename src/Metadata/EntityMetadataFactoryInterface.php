@@ -17,4 +17,11 @@ interface EntityMetadataFactoryInterface
      */
     public function createMetadata($reference);
 
+    /**
+     * Create a new metadata object with no configuration
+     *
+     * @return EntityMetadata
+     */
+    public function createEmptyMetadata();
+
 } 

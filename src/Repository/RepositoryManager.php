@@ -108,4 +108,14 @@ class RepositoryManager implements EntityMetadataProviderInterface
         return $repository->getEntityMetadata();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadataForIntermediary($collection)
+    {
+        $metadata = $this->metadataFactory->createEmptyMetadata();
+        $metadata->setCollection($collection);
+        return $metadata;
+    }
+
 } 

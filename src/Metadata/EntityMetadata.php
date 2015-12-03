@@ -10,6 +10,8 @@ class EntityMetadata
     // metadata array keys
     const METADATA_FIELD_TYPE = "type";
     const METADATA_FIELD_AUTO_INCREMENTING = "auto incrementing";
+    const METADATA_FIELD_GETTER = "getter";
+    const METADATA_FIELD_SETTER = "setter";
 
     const METADATA_INDEX_TYPE = "index type";
     const METADATA_INDEX_NAME = "index name";
@@ -21,6 +23,7 @@ class EntityMetadata
     const METADATA_RELATIONSHIP_OUR_FIELD = "our field";
     const METADATA_RELATIONSHIP_THEIR_FIELD = "their field";
     const METADATA_RELATIONSHIP_JOIN_TABLE = "join table";
+    const METADATA_RELATIONSHIP_GETTER = self::METADATA_FIELD_GETTER;
     const METADATA_ENTITY = "entity";
 
     // field types
@@ -112,6 +115,42 @@ class EntityMetadata
         return $fieldMetadata;
     }
 
+    public function setEntityValue($entity, $property, $value)
+    {
+        return $this->callPropertyMethod($entity, $property, self::METADATA_FIELD_SETTER, [$value]);
+    }
+
+    public function getEntityValue($entity, $property)
+    {
+        return $this->callPropertyMethod($entity, $property, self::METADATA_FIELD_GETTER);
+    }
+
+    protected function callPropertyMethod($entity, $property, $methodType, $args = [])
+    {
+        $propertyMetadata = null;
+        if (empty($this->fields[$property])) {
+            // look in the relationships
+            foreach ($this->relationships as $relationship) {
+                if ($relationship[self::METADATA_RELATIONSHIP_PROPERTY] == $property) {
+                    $propertyMetadata = $relationship;
+                    break;
+                }
+            }
+            if (empty($propertyMetadata)) {
+                throw new MetadataException("The field '$property' for the entity '{$this->entity}' has no metadata");
+            }
+        } else {
+            $propertyMetadata = $this->fields[$property];
+        }
+
+        if (empty($propertyMetadata[$methodType])) {
+            throw new MetadataException("The field '$property' has no $methodType information set");
+        }
+
+        $method = $propertyMetadata[$methodType];
+        return call_user_func_array([$entity, $method], $args);
+    }
+
     /**
      * @param string $table
      */
@@ -139,6 +178,11 @@ class EntityMetadata
                     break;
                 case self::METADATA_FIELD_AUTO_INCREMENTING:
                     $finalMetadata[self::METADATA_FIELD_AUTO_INCREMENTING] = (bool) $value;
+                    break;
+                case self::METADATA_FIELD_GETTER:
+                case self::METADATA_FIELD_SETTER:
+                    $this->validateClassMethod($value, $type);
+                    $finalMetadata[$type] = $value;
                     break;
             }
         }
@@ -173,6 +217,13 @@ class EntityMetadata
         }
     }
 
+    protected function validateClassMethod($method, $type)
+    {
+        if (!method_exists($this->entity, $method)) {
+            throw new MetadataException("The $type method '$method' does not exist for the entity '{$this->entity}'");
+        }
+    }
+
     public function getFieldType($field)
     {
         if (!isset($this->fields[$field][self::METADATA_FIELD_TYPE])) {
@@ -184,6 +235,9 @@ class EntityMetadata
     public function addRelationshipMetadata($entity, $metadata)
     {
         $finalMetadata = [];
+        if (!class_exists($entity)) {
+            throw new MetadataException("The entity class '$entity' does not exist");
+        }
         if (!isset($metadata[self::METADATA_RELATIONSHIP_TYPE])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a relationship type");
         }
@@ -193,10 +247,19 @@ class EntityMetadata
         if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
         }
+        $generatedGetter = false;
+        if (!isset($metadata[self::METADATA_RELATIONSHIP_GETTER])) {
+            $metadata[self::METADATA_RELATIONSHIP_GETTER] = "get" . ucfirst($metadata[self::METADATA_RELATIONSHIP_PROPERTY]);
+            $generatedGetter = true;
+        }
+        if (!method_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_GETTER])) {
+            throw new MetadataException("Could not find the" . ($generatedGetter? " generated": "") . " getter method '{$metadata[self::METADATA_RELATIONSHIP_GETTER]}' on the entity '{$this->entity}'");
+        }
         $type = $metadata[self::METADATA_RELATIONSHIP_TYPE];
         $finalMetadata[self::METADATA_ENTITY] = $entity;
         $finalMetadata[self::METADATA_RELATIONSHIP_TYPE] = $type;
         $finalMetadata[self::METADATA_RELATIONSHIP_PROPERTY] = $metadata[self::METADATA_RELATIONSHIP_PROPERTY];
+        $finalMetadata[self::METADATA_RELATIONSHIP_GETTER] = $metadata[self::METADATA_RELATIONSHIP_GETTER];
         switch ($type) {
             case self::RELATIONSHIP_TYPE_MANY_TO_MANY:
                 $finalMetadata[self::METADATA_RELATIONSHIP_JOIN_TABLE] = $this->getJoinTable($entity, $metadata);

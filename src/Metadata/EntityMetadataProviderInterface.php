@@ -17,4 +17,13 @@ interface EntityMetadataProviderInterface
      */
     public function getEntityMetadata($entity);
 
+    /**
+     * Provider the metadata for the intermediary collection of a Many to many relationship
+     *
+     * @param $collection
+     *
+     * @return EntityMetadata
+     */
+    public function getEntityMetadataForIntermediary($collection);
+
 } 

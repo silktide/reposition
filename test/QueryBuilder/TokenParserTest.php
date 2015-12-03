@@ -42,8 +42,8 @@ class TokenParserTest extends \PHPUnit_Framework_TestCase {
             [ // unknown constraint
                 [["blah" => "blah"]]
             ],
-            [ // invalid type
-                [["optional" => "blah"]],
+            [ // invalid optional
+                [["optional" => 123]],
                 "optional"
             ],
             [ // invalid multiple

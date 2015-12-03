@@ -17,4 +17,9 @@ class EntityMetadataFactory implements EntityMetadataFactoryInterface
         return new EntityMetadata($reference);
     }
 
+    public function createEmptyMetadata()
+    {
+        return new EntityMetadata("");
+    }
+
 } 

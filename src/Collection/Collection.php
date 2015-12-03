@@ -96,11 +96,15 @@ class Collection implements \Iterator
         return !empty($this->added) || !empty($this->removed);
     }
 
-    public function toArray()
+    public function toArray($toArrayEntities = true)
     {
         $return = [];
+        $methodExists = null;
         foreach ($this->entities as $entity) {
-            $return[] = method_exists($entity, "toArray")
+            if ($methodExists == null) {
+                $methodExists = method_exists($entity, "toArray");
+            }
+            $return[] = $toArrayEntities && $methodExists
                 ? $entity->toArray()
                 : $entity;
         }
@@ -144,12 +148,22 @@ class Collection implements \Iterator
         if ($this->trackChanges) {
             switch ($action) {
                 case "add":
-                    $this->added[] = $entity;
+                    $this->dedupeTrackingArrays("added", "removed", $entity);
                     break;
                 case "remove":
-                    $this->removed[] = $entity;
+                    $this->dedupeTrackingArrays("removed", "added", $entity);
                     break;
             }
+        }
+    }
+
+    protected function dedupeTrackingArrays($one, $two, $entity)
+    {
+        $index = array_search($entity, $this->{$two});
+        if ($index !== false) {
+            unset($this->{$two}[$index]);
+        } else {
+            $this->{$one}[] = $entity;
         }
     }
 
