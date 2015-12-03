@@ -9,7 +9,7 @@ class TokenFactory
     {
         if (!is_null($alias)) {
             return new Reference($type, $value, $alias);
-        } elseif (!is_null($value)) {
+        } elseif (!is_null($value) || $type == Value::TYPE_NULL) {
             if ($type == "entity") {
                 return new Entity($value);
             }
