@@ -399,7 +399,7 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function val($value)
     {
-        $type = gettype($value);
+        $type = strtolower(gettype($value));
 
         $this->addNewToSequence($type, $value);
         return $this;
