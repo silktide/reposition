@@ -258,7 +258,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query = $this->queryBuilder->update($childMetadata)
                 ->ref($theirField)
                 ->op("=")
-                ->val($ourValue)
+                ->val($update["value"])
                 ->where()
                 ->ref($childPk)
                 ->op("IN");
