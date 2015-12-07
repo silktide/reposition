@@ -8,9 +8,9 @@ namespace Silktide\Reposition\Collection;
 class CollectionFactory
 {
 
-    public function create(array $entities = [])
+    public function create(array $entities = [], $entityIdGetter = "getId")
     {
-        return new Collection($entities);
+        return new Collection($entities, $entityIdGetter);
     }
 
 }

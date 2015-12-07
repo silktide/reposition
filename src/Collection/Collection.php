@@ -11,22 +11,24 @@ class Collection implements \Iterator
 
     protected $entities = [];
 
+    protected $entityIdGetter;
+
     protected $added = [];
 
     protected $removed = [];
 
     protected $trackChanges = false;
 
-    public function __construct(array $entities = [])
+    public function __construct(array $entities = [], $entityIdGetter = "getId")
     {
         $this->entities = $entities;
+        $this->entityIdGetter = $entityIdGetter;
     }
 
     public function add($entity)
     {
         // check this isn't in the array already
-        $index = array_search($entity, $this->entities);
-        if ($index !== false) {
+        if (!empty($this->searchFor($entity))) {
             return;
         }
 
@@ -34,10 +36,30 @@ class Collection implements \Iterator
         $this->track("add", $entity);
     }
 
+    public function searchFor($entity, $entities = null)
+    {
+        if (!method_exists($entity, $this->entityIdGetter)) {
+            throw new CollectionException("The ID getter method '{$this->entityIdGetter}' does not exist on the entity");
+        }
+        $search = $entity->{$this->entityIdGetter}();
+
+        if ($entities === null) {
+            $entities = $this->entities;
+        }
+
+        foreach ($entities as $i => $existingEntity) {
+            if ($existingEntity->{$this->entityIdGetter}() == $search) {
+                return $i;
+            }
+        }
+
+        return false;
+    }
+
     public function remove($entity)
     {
-        $index = array_search($entity, $this->entities);
-        // if we didn't find an entity, no need to continue
+        $index = $this->searchFor($entity);
+        // if we don't have this entity, no need to continue
         if ($index === false) {
             return;
         }
@@ -159,7 +181,7 @@ class Collection implements \Iterator
 
     protected function dedupeTrackingArrays($one, $two, $entity)
     {
-        $index = array_search($entity, $this->{$two});
+        $index = $this->searchFor($entity, $this->{$two});
         if ($index !== false) {
             unset($this->{$two}[$index]);
         } else {
