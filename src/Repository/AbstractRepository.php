@@ -192,7 +192,8 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $property = $relationship[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY];
             $collection = $this->entityMetadata->getEntityValue($entity, $property);
             if (!$collection instanceof Collection) {
-                throw new RepositoryException("The property for the '$alias' relationship of '{$this->entityMetadata->getEntity()}' is required to be a Collection object");
+                // if this isn't a collection object we can't process this relationship
+                continue;
             }
 
             // get the field used on the child entity
