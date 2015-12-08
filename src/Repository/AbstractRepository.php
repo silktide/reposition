@@ -440,19 +440,59 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
         if (!empty($includeRelationships)) {
-            $relationships = $this->entityMetadata->getRelationships();
 
-            // if includeRelationships is an array, filter out relationships not in the array
-            if (is_array($includeRelationships)) {
-                $relationships = array_intersect_key($relationships, array_flip($includeRelationships));
+            if (!is_array($includeRelationships) || isset($includeRelationships[0])) {
+                $includeRelationships = ["this" => $includeRelationships];
             }
 
+            $allRelationships = ["this" => $this->entityMetadata->getRelationships()];
+            $relationships = [];
+            $parents = [];
+
+            // add all the relationship metadata we need into the allRelationships array
+            foreach (array_keys($includeRelationships) as $alias) {
+                if ($alias == "this") {
+                    // already added the subject entity's relationships
+                    continue;
+                }
+                foreach ($allRelationships as $subset) {
+                    if (!empty($subset[$alias])) {
+                        $relationshipEntity = $subset[$alias][EntityMetadata::METADATA_ENTITY];
+                        $relationshipMetadata = $this->metadataProvider->getEntityMetadata($relationshipEntity);
+                        $allRelationships[$alias] = $relationshipMetadata->getRelationships();
+                        break;
+                    }
+                }
+            }
+
+            foreach ($includeRelationships as $alias => $includes) {
+                if (empty($allRelationships[$alias])) {
+                    continue;
+                }
+                $thisRelationships = $allRelationships[$alias];
+                // if we have an array of includes, filter thisRelationships
+                if (is_array($includes)) {
+                    $thisRelationships = array_intersect_key($allRelationships[$alias], array_flip($includes));
+                }
+                // record the parent of each of the child aliases, so we can reference them when we include the entity
+                foreach (array_keys($thisRelationships) as $childAlias) {
+                    $parents[$childAlias] = $alias;
+                }
+                // add thisRelationships to the final list
+                $relationships = array_replace($relationships, $thisRelationships);
+            }
+
+            // get the metadata for each entity and include it on the query
             foreach ($relationships as $alias => $relationship) {
                 $metadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
                 if ($alias == $metadata->getEntity()) {
                     $alias = "";
                 }
-                $query->includeEntity($metadata, $alias);
+                $parent = $parents[$alias];
+                if ($parent == "this") {
+                    $parent = "";
+                }
+                $query->includeEntity($metadata, $alias, $parent);
             }
         }
     }
