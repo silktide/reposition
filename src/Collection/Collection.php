@@ -28,7 +28,7 @@ class Collection implements \Iterator
     public function add($entity)
     {
         // check this isn't in the array already
-        if (!empty($this->searchFor($entity))) {
+        if ($this->searchFor($entity) !== false) {
             return;
         }
 
