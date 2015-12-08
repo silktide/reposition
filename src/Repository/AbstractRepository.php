@@ -352,7 +352,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->delete($this->entityMetadata);
         $this->createWhereFromFilters($query, $filters);
-        return $this->doQuery($query);
+        return $this->doQuery($query, false);
     }
 
     /**
