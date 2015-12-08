@@ -116,10 +116,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->find($this->entityMetadata);
         $this->addIncludes($query, $includeRelationships);
-        $query->where()
-            ->ref($this->getCollectionName() . "." . $this->entityMetadata->getPrimaryKey())
-            ->op("=")
-            ->val($id);
+        $this->createWhereFromFilters($query, [$this->entityMetadata->getPrimaryKey() => $id], true, true);
         return $this->doQuery($query);
     }
 
@@ -131,7 +128,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $query = $this->queryBuilder->find($this->entityMetadata);
         $this->addIncludes($query, $includeRelationships);
 
-        $this->createWhereFromFilters($query, $filters);
+        $this->createWhereFromFilters($query, $filters, true, true);
 
         if (!empty($sort)) {
             $query->sort($sort);
@@ -386,7 +383,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
     }
 
-    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true)
+    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true, $prefixFieldsWithCollection = false)
     {
         if (empty($filters)) {
             return;
@@ -403,7 +400,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $firstValue = array_shift($filters);
 
         // filter first field
-        $this->addComparisonToQuery($query, $firstField, $firstValue);
+        $this->addComparisonToQuery($query, $firstField, $firstValue, $prefixFieldsWithCollection);
 
         // create filters
         foreach ($filters as $field => $value) {
@@ -432,7 +429,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $field = $ourField;
         }
 
-        if ($prefixFieldWithCollection) {
+        if ($prefixFieldWithCollection && strpos($field, ".") === false) {
             $field = $this->collectionName . "." . $field;
         }
 
