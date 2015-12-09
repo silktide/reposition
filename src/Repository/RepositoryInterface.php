@@ -1,7 +1,5 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\Repository;
 
 /**
@@ -16,45 +14,33 @@ interface RepositoryInterface
     public function getEntityName();
 
     /**
-     * @param string|int $id
-     * @return object
+     * @return string
      */
-    public function find($id);
+    public function getCollectionName();
 
     /**
-     * @param array $conditions
+     * @param string|int $id
+     * @param bool $includeRelationships
+     * @return object
+     */
+    public function find($id, $includeRelationships = null);
+
+    /**
+     * @param array $filter
      * @param array $sort
      * @param int $limit
      * @param array $options
+     * @param bool $includeRelationships
      * @return array
      */
-    public function filter(array $conditions, array $sort = [], $limit = 0, array $options = []);
+    public function filter(array $filter, array $sort = [], $limit = 0, array $options = [], $includeRelationships = null);
 
     /**
      * @param object $entity
      * @param array $options
      * @return string|int - ID of the entity
      */
-    public function insert($entity, array $options = []);
-
-    /**
-     * @param object $entity
-     */
-    public function update($entity);
-
-    /**
-     * @param object $entity
-     * @param array $options
-     * @return string|int - ID of the entity
-     */
-    public function upsert($entity, array $options = []);
-
-    /**
-     * @param array $conditions
-     * @param array $updateValues
-     * @return string|int - ID of the entity
-     */
-    public function updateBy(array $conditions, array $updateValues);
+    public function save($entity, array $options = []);
 
     /**
      * @param string|int $id
@@ -62,17 +48,16 @@ interface RepositoryInterface
     public function delete($id);
 
     /**
-     * @param array $conditions
+     * @param array $filters
      */
-    public function deleteBy(array $conditions);
+    public function deleteWithFilter(array $filters);
 
     /**
      * Aggregation / Grouping
      *
-     * @param array $operations
      * @param array $conditions
-     * @param array $options
+     * @param array $groupBy
      * @return array
      */
-    public function aggregate(array $operations, array $conditions = [], array $options = []);
+    public function count(array $conditions = [], array $groupBy = []);
 } 

@@ -1,29 +1,37 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\Repository;
 
+use Silktide\Reposition\Collection\Collection;
 use Silktide\Reposition\Exception\RepositoryException;
-use Silktide\Reposition\Query\Query;
+use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
+use Silktide\Reposition\Metadata\EntityMetadata;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 
 /**
  *
  */
-abstract class AbstractRepository implements RepositoryInterface
+abstract class AbstractRepository implements RepositoryInterface, MetadataRepositoryInterface
 {
 
+    const ANSI_DUPLICATE_KEY_ERROR_CODE = "23505";
+
     /**
-     * @var string
+     * @var EntityMetadata
      */
-    protected $entityName;
+    protected $entityMetadata;
 
     /**
      * @var string
      */
-    protected $tableName;
+    protected $collectionName;
+
+    /**
+     * @var string
+     */
+    protected $primaryKey;
 
     /**
      * @var QueryBuilderInterface
@@ -36,15 +44,45 @@ abstract class AbstractRepository implements RepositoryInterface
     protected $storage;
 
     /**
-     * @param string $entityName
+     * @var EntityMetadataProviderInterface
+     */
+    protected $metadataProvider;
+
+    /**
+     * Flag to set if relationships are included by default
+     * Alternatively, an array selecting the relationships to include by default
+     *
+     * @var bool|array
+     */
+    protected $includeRelationshipsByDefault = false;
+
+    /**
+     * @param EntityMetadata $entityMetadata
      * @param QueryBuilderInterface $queryBuilder
      * @param StorageInterface $storage
+     * @param EntityMetadataProviderInterface $metadataProvider
      */
-    public function __construct($entityName, QueryBuilderInterface $queryBuilder, StorageInterface $storage)
+    public function __construct(EntityMetadata $entityMetadata, QueryBuilderInterface $queryBuilder, StorageInterface $storage, EntityMetadataProviderInterface $metadataProvider)
     {
-        $this->entityName = $entityName;
+        $this->entityMetadata = $entityMetadata;
         $this->queryBuilder = $queryBuilder;
         $this->storage = $storage;
+        $this->metadataProvider = $metadataProvider;
+        $this->configureMetadata();
+    }
+
+    /**
+     * Configure the metadata for the entity this repository interacts with
+     *
+     * Override this method to set additional fields or define relationships with other entities
+     *
+     */
+    protected function configureMetadata()
+    {
+        $this->entityMetadata->setCollection($this->collectionName);
+        if (!empty($this->primaryKey)) {
+            $this->entityMetadata->setPrimaryKey($this->primaryKey);
+        }
     }
 
     /**
@@ -52,67 +90,249 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function getEntityName()
     {
-        return $this->entityName;
+        return $this->entityMetadata->getEntity();
     }
 
     /**
      * {@inheritDoc}
      */
-    public function find($id)
+    public function getCollectionName()
     {
-        $query = $this->queryBuilder->findById($this->tableName, $id);
+        return $this->entityMetadata->getCollection();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadata()
+    {
+        return $this->entityMetadata;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function find($id, $includeRelationships = null)
+    {
+        $query = $this->queryBuilder->find($this->entityMetadata);
+        $this->addIncludes($query, $includeRelationships);
+        $this->createWhereFromFilters($query, [$this->entityMetadata->getPrimaryKey() => $id], true, true);
         return $this->doQuery($query);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function filter(array $conditions, array $sort = [], $limit = 0, array $options = [])
+    public function filter(array $filters, array $sort = [], $limit = 0, array $options = [], $includeRelationships = null)
     {
-        $query = $this->queryBuilder->findBy($this->tableName, $conditions, $sort, $limit);
-        return $this->doQuery($query);
-    }
+        $query = $this->queryBuilder->find($this->entityMetadata);
+        $this->addIncludes($query, $includeRelationships);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function insert($entity, array $options = [])
-    {
-        $query = $this->queryBuilder->insert($this->tableName, $entity, $options);
-        return $this->doQuery($query, false);
-    }
+        $this->createWhereFromFilters($query, $filters, true, true);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function update($entity, $id = 0)
-    {
-        if (empty($id)){
-            if (!method_exists($entity, "getId")) {
-                throw new RepositoryException("Can't update an entity without an ID");
-            }
-            $id = $entity->getId();
+        if (!empty($sort)) {
+            $query->sort($sort);
         }
-        $query = $this->queryBuilder->updateById($this->tableName, $id, $entity);
-        return $this->doQuery($query, false);
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function upsert($entity, array $options = [])
-    {
-        $query = $this->queryBuilder->upsert($this->tableName, $entity, $options);
-        return $this->doQuery($query, false);
-    }
+        if (!empty($limit)) {
+            $query->limit($limit);
+        }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function updateBy(array $conditions, array $updateValues)
-    {
-        $query = $this->queryBuilder->updateBy($this->tableName, $conditions, $updateValues);
         return $this->doQuery($query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function save($entity, array $options = [])
+    {
+        $query = $this->queryBuilder->save($this->entityMetadata, $options)->entity($entity);
+        try {
+            $saveResult = $this->doQuery($query, false);
+        } catch (\PDOException $e) {
+            $pkMetadata = $this->entityMetadata->getPrimaryKeyMetadata();
+            // if this entity has an auto incrementing PK, or the error is not about PK conflicts, re-throw the error
+            if ($pkMetadata[EntityMetadata::METADATA_FIELD_AUTO_INCREMENTING] == true || $e->errorInfo[0] != self::ANSI_DUPLICATE_KEY_ERROR_CODE) {
+                throw $e;
+            }
+
+            // this is a duplicate key on a collection with a PK that does not auto increment.
+            // force the save to be an update
+            $query->setOption("saveType", "update");
+            $saveResult = $this->doQuery($query, false);
+        }
+
+        // get the primary key value, if there is one, and save it on the entity
+        if (isset($saveResult[StorageInterface::NEW_INSERT_ID_RETURN_FIELD])) {
+            $pkValue = $saveResult[StorageInterface::NEW_INSERT_ID_RETURN_FIELD];
+            $this->entityMetadata->setEntityValue($entity, $this->entityMetadata->getPrimaryKey(), $pkValue);
+        } else {
+            $pkValue = null;
+        }
+
+        // save "* to many" relationships
+        foreach ($this->entityMetadata->getRelationships() as $alias => $relationship) {
+            $type = $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE];
+
+            if ($type == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
+                // This covers "many to one" as well
+                continue;
+            }
+
+            /* We need to know the following:
+             * Which child entities have been added and removed
+             * The field names used on both sides of the relationship
+             * The corresponding values for both the parent and child entities
+             */
+
+            // get the collection object for this relationship
+            $property = $relationship[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY];
+            $collection = $this->entityMetadata->getEntityValue($entity, $property);
+            if (!$collection instanceof Collection) {
+                // if this isn't a collection object we can't process this relationship
+                continue;
+            }
+
+            // get the field used on the child entity
+            $childMetadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
+
+            $theirField = !empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
+                ? $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
+                : $childMetadata->getPrimaryKey();
+
+            // get the field and value used on the parent entity
+            $ourValue = null;
+            $ourField = null;
+            // if we haven't specified a field for the parent, use the primary key
+            if (empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD])) {
+                // using the PK
+                if ($pkValue !== null) {
+                    // This was a new record and we already have the value for the parent PK, so set it now
+                    $ourValue = $pkValue;
+                }
+                $ourField = $this->entityMetadata->getPrimaryKey();
+            } else {
+                $ourField = $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD];
+            }
+
+            // get the parent value if it isn't set already
+            if ($ourValue === null) {
+                $ourValue = $this->entityMetadata->getEntityValue($entity, $ourField);
+            }
+
+            // update the relationship
+            if ($type == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_MANY) {
+                $this->saveOneToMany($collection, $childMetadata, $ourValue, $theirField);
+            } elseif ($type == EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
+                $this->saveManyToMany($relationship, $collection, $childMetadata, $ourValue, $ourField, $theirField);
+            }
+        }
+
+        return $saveResult;
+    }
+
+    protected function saveOneToMany(Collection $collection, EntityMetadata $childMetadata, $ourValue, $theirField) {
+        // Both operations are updates; one sets the parent value on the child, the other removes any existing values
+        // The two are so similar we can abstract the differences to the following array:
+        $updates = [
+            [
+                "entities" => $collection->getAddedEntities(),
+                "value" => $ourValue
+            ],
+            [
+                "entities" => $collection->getRemovedEntities(),
+                "value" => null
+            ]
+        ];
+
+        foreach ($updates as $update) {
+            // obviously, we don't have to do anything if there are no entities to process
+            if (empty($update["entities"])) {
+                continue;
+            }
+
+            $childPk = $childMetadata->getPrimaryKey();
+
+            $query = $this->queryBuilder->update($childMetadata)
+                ->ref($theirField)
+                ->op("=")
+                ->val($update["value"])
+                ->where()
+                ->ref($childPk)
+                ->op("IN");
+
+            // TODO: replace this with a "list" token
+            // Create the IN clause so we can add it to the query
+            $inClause = $this->queryBuilder->expression();
+            foreach ($update["entities"] as $child) {
+                $inClause->val($childMetadata->getEntityValue($child, $childPk));
+            }
+            $query->closure($inClause);
+
+            $this->doQuery($query, false);
+        }
+    }
+
+    protected function saveManyToMany(
+        array $relationship,
+        Collection $collection,
+        EntityMetadata $childMetadata,
+        $ourValue,
+        $ourField,
+        $theirField
+    ) {
+        // We will be doing operations on an intermediary join table. As Reposition works with EntityMetadata, we
+        // need to create the metadata for the intermediary
+        $intermediaryMetadata = $this->metadataProvider->getEntityMetadataForIntermediary(
+            $relationship[EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE]
+        );
+
+        // generate the field names used on this table and create field metadata for them
+        $intermediaryOurField = $this->entityMetadata->getCollection() . "_" . $ourField;
+        $intermediaryTheirField = $childMetadata->getCollection() . "_" . $theirField;
+        $intermediaryMetadata->addFieldMetadata($intermediaryOurField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
+        $intermediaryMetadata->addFieldMetadata($intermediaryTheirField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
+
+        // process added and removed children
+        $added = $collection->getAddedEntities();
+        $removed = $collection->getRemovedEntities();
+
+        if (!empty($added)) {
+            $insert = $this->queryBuilder->save($intermediaryMetadata, ["saveType" => "insert"]);
+
+            // create an array of values to use, for each entity we're adding
+            foreach ($added as $child) {
+                // TODO: this won't work as we're using a field instead of a property name
+                $entityArray = [
+                    $intermediaryOurField => $ourValue,
+                    $intermediaryTheirField => $childMetadata->getEntityValue($child, $theirField)
+                ];
+                $insert->entity($entityArray);
+            }
+            $this->doQuery($insert, false);
+        }
+        if (!empty($removed)) {
+            $delete = $this->queryBuilder->delete($intermediaryMetadata);
+            // delete rows where the parent value is X and the child value is in the list
+            $delete
+                ->where()
+                ->ref($intermediaryOurField)
+                ->op("=")
+                ->val($ourValue)
+                ->andL()
+                ->ref($intermediaryTheirField)
+                ->op("IN");
+
+            // TODO: replace this with a "list"
+            // Create the IN clause so we can add it to the query
+            $inClause = $this->queryBuilder->expression();
+            foreach ($removed as $child) {
+                $inClause->val($childMetadata->getEntityValue($child, $theirField));
+            }
+            $delete->closure($inClause);
+
+            $this->doQuery($delete, false);
+        }
     }
 
     /**
@@ -120,45 +340,161 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     public function delete($id)
     {
-        $query = $this->queryBuilder->deleteById($this->tableName, $id);
+        $query = $this->queryBuilder->delete($this->entityMetadata)
+            ->where()
+            ->ref($this->entityMetadata->getPrimaryKey())
+            ->op("=")
+            ->val($id);
+        return $this->doQuery($query, false);
+    }
+
+    public function deleteWithFilter(array $filters)
+    {
+        $query = $this->queryBuilder->delete($this->entityMetadata);
+        $this->createWhereFromFilters($query, $filters);
         return $this->doQuery($query);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function deleteBy(array $conditions)
+    public function count(array $conditions = [], array $groupBy = [])
     {
-        $query = $this->queryBuilder->deleteBy($this->tableName, $conditions);
+        $query = $this->queryBuilder->find($this->entityMetadata)->aggregate("count", "*");
+
+        $this->createWhereFromFilters($query, $conditions);
+
+        if (!empty($groupBy)) {
+            $query->group($groupBy);
+        }
+
         return $this->doQuery($query, false);
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function aggregate(array $operations, array $conditions = [], array $options = [])
-    {
-        $query = $this->queryBuilder->aggregate($this->tableName, $operations, $conditions, $options);
-        return $this->doQuery($query, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function count(array $conditions = [], array $options = [])
-    {
-        $query = $this->queryBuilder->aggregate($this->tableName, $conditions, $options);
-        return $this->doQuery($query, false);
-    }
-
-    /**
-     * @param Query $query
+     * @param TokenSequencerInterface $query
      * @param bool $createEntity
+     *
      * @return object|array
      */
-    protected function doQuery(Query $query, $createEntity = true)
+    protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
     {
-        return $this->storage->query($query, $createEntity? $this->entityName: "");
+        $query->resetSequence();
+        return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
+    }
+
+    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true, $prefixFieldsWithCollection = false)
+    {
+        if (empty($filters)) {
+            return;
+        }
+
+        if ($startWithWhere) {
+            $query->where();
+        }
+
+        // we need to prepend "andL" to all but the first field, so
+        // get the values for the last field and remove it from the array
+        reset($filters);
+        $firstField = key($filters);
+        $firstValue = array_shift($filters);
+
+        // filter first field
+        $this->addComparisonToQuery($query, $firstField, $firstValue, $prefixFieldsWithCollection);
+
+        // create filters
+        foreach ($filters as $field => $value) {
+            $query->andL();
+            $this->addComparisonToQuery($query, $field, $value);
+        }
+
+    }
+
+    protected function addComparisonToQuery(TokenSequencerInterface $query, $field, $value, $prefixFieldWithCollection = false)
+    {
+        if ($this->entityMetadata->hasRelationShip($field)) {
+            $relationship = $this->entityMetadata->getRelationship($field);
+            if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
+                $ourField = null;
+            } else {
+                $ourField = empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD])
+                    ? null
+                    : $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD];
+            }
+
+            if (empty($ourField)) {
+                throw new RepositoryException("No field could be found for the relationship '$field'");
+            }
+
+            $field = $ourField;
+        }
+
+        if ($prefixFieldWithCollection && strpos($field, ".") === false) {
+            $field = $this->collectionName . "." . $field;
+        }
+
+        $query->ref($field)->op("=")->val($value);
+    }
+
+    protected function addIncludes(TokenSequencerInterface $query, $includeRelationships)
+    {
+        $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
+        if (!empty($includeRelationships)) {
+
+            if (!is_array($includeRelationships) || isset($includeRelationships[0])) {
+                $includeRelationships = ["this" => $includeRelationships];
+            }
+
+            $allRelationships = ["this" => $this->entityMetadata->getRelationships()];
+            $relationships = [];
+            $parents = [];
+
+            // add all the relationship metadata we need into the allRelationships array
+            foreach (array_keys($includeRelationships) as $alias) {
+                if ($alias == "this") {
+                    // already added the subject entity's relationships
+                    continue;
+                }
+                foreach ($allRelationships as $subset) {
+                    if (!empty($subset[$alias])) {
+                        $relationshipEntity = $subset[$alias][EntityMetadata::METADATA_ENTITY];
+                        $relationshipMetadata = $this->metadataProvider->getEntityMetadata($relationshipEntity);
+                        $allRelationships[$alias] = $relationshipMetadata->getRelationships();
+                        break;
+                    }
+                }
+            }
+
+            foreach ($includeRelationships as $alias => $includes) {
+                if (empty($allRelationships[$alias])) {
+                    continue;
+                }
+                $thisRelationships = $allRelationships[$alias];
+                // if we have an array of includes, filter thisRelationships
+                if (is_array($includes)) {
+                    $thisRelationships = array_intersect_key($allRelationships[$alias], array_flip($includes));
+                }
+                // record the parent of each of the child aliases, so we can reference them when we include the entity
+                foreach (array_keys($thisRelationships) as $childAlias) {
+                    $parents[$childAlias] = $alias;
+                }
+                // add thisRelationships to the final list
+                $relationships = array_replace($relationships, $thisRelationships);
+            }
+
+            // get the metadata for each entity and include it on the query
+            foreach ($relationships as $alias => $relationship) {
+                $metadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
+                if ($alias == $metadata->getEntity()) {
+                    $alias = "";
+                }
+                $parent = $parents[$alias];
+                if ($parent == "this") {
+                    $parent = "";
+                }
+                $query->includeEntity($metadata, $alias, $parent);
+            }
+        }
     }
 
 } 

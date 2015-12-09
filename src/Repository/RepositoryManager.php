@@ -1,16 +1,18 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
+use Silktide\Reposition\Exception\MetadataException;
 use Silktide\Reposition\Storage\StorageInterface;
+use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
+use Silktide\Reposition\Metadata\EntityMetadataFactoryInterface;
+use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 
 /**
  *
  */
-class RepositoryManager 
+class RepositoryManager implements EntityMetadataProviderInterface
 {
 
     protected $repositoryNamespaces = [];
@@ -19,13 +21,23 @@ class RepositoryManager
 
     protected $defaultStorage;
 
-    public function __construct(StorageInterface $storage, array $repositoryNamespaces, array $repositories = [])
+    protected $defaultQueryBuilder;
+
+    protected $metadataFactory;
+
+    public function __construct(StorageInterface $storage, QueryBuilderInterface $queryBuilder, EntityMetadataFactoryInterface $metadataFactory, array $repositoryNamespaces, array $repositories = [])
     {
         $this->defaultStorage = $storage;
+        $this->defaultQueryBuilder = $queryBuilder;
+        $this->metadataFactory = $metadataFactory;
         $this->repositoryNamespaces = $repositoryNamespaces;
         $this->repositoryNamespaces[] = ""; // for classes with no namespace
         foreach ($repositories as $repository) {
             $this->addRepository($repository);
+        }
+
+        if (!$this->defaultStorage->hasEntityMetadataProvider()) {
+            $this->defaultStorage->setEntityMetadataProvider($this);
         }
     }
 
@@ -46,32 +58,64 @@ class RepositoryManager
         }
         if (empty($this->repositoryCache[$entity])) {
             // try to autoload the repository based on entity class name
+            $repoFqcn = "";
 
-            // strip the namespace and add "Repository"
-            $entityClass = (strpos($entity, "\\") !== false)
-                ? substr($entity, strrpos($entity, "\\") + 1)
-                : $entity;
-            $repoClass = $entityClass . "Repository";
+            // first check in the same namespace as the entity
+            if (class_exists($entity . "Repository")) {
+                $repoFqcn = $entity . "Repository";
+            } else {
+                // Create the repo class name. Strip the entity namespace and add "Repository"
+                $entityClass = (strpos($entity, "\\") !== false)
+                    ? substr($entity, strrpos($entity, "\\") + 1)
+                    : $entity;
+                $repoClass = $entityClass . "Repository";
 
-            // check each registered repository namespace for the repository class
-            foreach ($this->repositoryNamespaces as $namespace) {
-                $repoFqcn = rtrim($namespace, "\\") . "\\" . $repoClass;
-                if (class_exists($repoFqcn)) {
-                    $this->repositoryCache[$entity] = new $repoFqcn(
-                        $entity,
-                        $this->defaultStorage->getQueryBuilder(),
-                        $this->defaultStorage
-                    );
-                    break;
+                // check each registered repository namespace for the repository class
+                foreach ($this->repositoryNamespaces as $namespace) {
+                    $namespace = rtrim($namespace, "\\") . "\\";
+                    if (class_exists($namespace . $repoClass)) {
+                        $repoFqcn = $namespace . $repoClass;
+                        break;
+                    }
                 }
             }
 
-            // error on no match
-            if (empty($this->repositoryCache[$entity])) {
+            if (empty($repoFqcn)) {
                 throw new RepositoryException("Could not find a repository for the entity '$entity'");
             }
+
+            $this->repositoryCache[$entity] = new $repoFqcn(
+                $this->metadataFactory->createMetadata($entity),
+                $this->defaultQueryBuilder,
+                $this->defaultStorage,
+                $this
+            );
         }
         return $this->repositoryCache[$entity];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadata($entity)
+    {
+        $repository = $this->getRepositoryFor($entity);
+
+        if (!$repository instanceof MetadataRepositoryInterface) {
+            throw new MetadataException("Cannot get metadata for '$entity', the repository class for the entity does not supply metadata information.");
+        }
+
+        return $repository->getEntityMetadata();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityMetadataForIntermediary($collection)
+    {
+        $metadata = $this->metadataFactory->createEmptyMetadata();
+        $metadata->setCollection($collection);
+        return $metadata;
     }
 
 } 

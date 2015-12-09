@@ -1,128 +1,187 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\QueryBuilder;
-use Silktide\Reposition\Exception\QueryException;
-use Silktide\Reposition\Query\AggregationQuery;
-use Silktide\Reposition\Query\DeleteQuery;
-use Silktide\Reposition\Query\FindQuery;
-use Silktide\Reposition\Query\InsertQuery;
-use Silktide\Reposition\Query\UpdateQuery;
+
+use Silktide\Reposition\Metadata\EntityMetadata;
 
 /**
  *
  */
-class QueryBuilder implements QueryBuilderInterface
+class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
 {
 
-    public function findBy($table, array $filters, array $sort = [], $limit = null)
+    protected $options = [];
+
+    public function getOptions()
     {
-        $find = new FindQuery($table);
-        $find->setFilters($this->parseKeys($filters));
-        $find->setSort($sort);
-        $find->setLimit($limit);
-        return $find;
+        return $this->options;
     }
 
-    public function findById($table, $id)
+    ////////// QUERY START METHODS //////////
+
+    /**
+     * SELECT, etc...
+     *
+     * @param EntityMetadata $entity
+     *
+     * @return TokenSequencer
+     */
+    public function find(EntityMetadata $entity)
     {
-        return $this->findBy($table, [self::PRIMARY_KEY => $id]);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_FIND, $entity);
     }
 
-    public function findFirst($table, array $filters, array $sort = [])
+    /**
+     * INSERT, straightforward UPDATE
+     *
+     * @param EntityMetadata $entity
+     * @param array $options
+     *
+     * @return TokenSequencer
+     */
+    public function save(EntityMetadata $entity, array $options = [])
     {
-        return $this->findBy($table, $filters, $sort, 1);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_SAVE, $entity, $options);
     }
 
-    public function updateBy($table, array $filters, $values)
+    /**
+     * Mass update e.g. UPDATE field = field + 1 WHERE ...
+     *
+     * @param EntityMetadata $entity
+     *
+     * @return TokenSequencer
+     */
+    public function update(EntityMetadata $entity)
     {
-        $update = new UpdateQuery($table);
-        $update->setFilters($this->parseKeys($filters));
-        $update->setValues($this->parseValues($values));
-        return $update;
+        return new TokenSequencer($this->tokenFactory, self::TYPE_UPDATE, $entity);
     }
 
-    public function updateById($table, $id, $values)
+    /**
+     * @param EntityMetadata $entity
+     *
+     * @return TokenSequencer
+     */
+    public function delete(EntityMetadata $entity)
     {
-        return $this->updateBy($table, [self::PRIMARY_KEY => $id], $values);
+        return new TokenSequencer($this->tokenFactory, self::TYPE_DELETE, $entity);
     }
 
-    public function insert($table, $values, array $modifiers = [])
+    /**
+     * @return TokenSequencer
+     */
+    public function expression()
     {
-        $insert = new InsertQuery($table);
-        $values = $this->parseValues($values);
-        if ($this->primaryKeyIsSet($values)) {
-            // TODO: Should we allow primary keys to be inserted?
-            throw new QueryException("Cannot insert a record which has a primary key. Use 'update' instead.");
-        }
-        $insert->setValues($values);
-        $insert->setModifiers($modifiers);
-        return $insert;
+        return new TokenSequencer($this->tokenFactory, self::TYPE_EXPRESSION);
     }
 
-    public function replace($table, $values, array $modifiers = [])
+    ////////// OVERRIDE TokenSequencer METHODS TO PREVENT INVALID USAGE //////////
+
+    public function getType()
     {
-        $modifiers["strategy"] = "replace";
-        return $this->insert($table, $values, $modifiers);
+        throw new \LogicException("No type has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function upsert($table, $values, array $modifiers = [])
+    public function isQuery()
     {
-        $values = $this->parseValues($values);
-        if ($this->primaryKeyIsSet($values)) {
-            return $this->updateById($table, $values[self::PRIMARY_KEY], $values);
-        }
-        return $this->insert($table, $values, $modifiers);
+        throw new \LogicException("Cannot check if this is a query. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function deleteBy($table, array $filters)
+    public function getEntityName()
     {
-        $delete = new DeleteQuery($table);
-        $delete->setFilters($this->parseKeys($filters));
-        return $delete;
+        throw new \LogicException("No entity name has been set. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    public function deleteById($table, $id)
+    public function getSequence()
     {
-        return $this->deleteBy($table, [self::PRIMARY_KEY => $id]);
+        throw new \LogicException("Sequence has not ben initialised.");
     }
 
-    public function aggregate($table, array $operations, array $filters = [], array $modifiers = [])
+
+
+    public function aggregate($type)
     {
-        $aggregate = new AggregationQuery($table);
-        $aggregate->setOperations($operations);
-        $aggregate->setFilters($filters);
-        $aggregate->setModifiers($modifiers);
-        return $aggregate;
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return call_user_func_array([$sequencer, "aggregate"], func_get_args());
     }
 
-    public function count($table, array $filters = [], array $modifiers = [])
+    public function where()
     {
-        return $this->aggregate($table, ["count" => "*"], $filters, $modifiers);
+        throw new \LogicException("Cannot use the 'where' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    protected function parseKeys(array $filters)
+    public function group(array $by)
     {
-        return $filters;
+        throw new \LogicException("Cannot use the 'group' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    protected function parseValues($values)
+    public function sort(array $by)
     {
-        if (is_array($values)) {
-            return $values;
-        }
-        if (is_object($values)) {
-            if (method_exists($values, "toArray")) {
-                return $values->toArray();
-            }
-            throw new QueryException("Values object does not implement the 'toArray' method");
-        }
-        throw new QueryException("Values are not an array or an object");
+        throw new \LogicException("Cannot use the 'order' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
 
-    protected function primaryKeyIsSet(array $values)
+    public function limit($limit, $offset = null)
     {
-        return !empty($values[self::PRIMARY_KEY]);
+        throw new \LogicException("Cannot use the 'limit' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
     }
-} 
+
+
+
+    public function notL()
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->not();
+    }
+
+    public function andL()
+    {
+        throw new \LogicException("Cannot use the 'andL' method just yet.");
+    }
+
+    public function orL()
+    {
+        throw new \LogicException("Cannot use the 'orL' method just yet.");
+    }
+
+
+
+    public function closure($content = null)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->closure($content);
+    }
+
+    public function ref($name, $alias = "", $type = "field")
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->ref($name, $alias, $type);
+    }
+
+    public function op($value)
+    {
+        throw new \LogicException("Cannot use the 'op' method just yet.");
+    }
+
+    public function val($value)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->val($value);
+    }
+
+    public function entity($entity)
+    {
+        throw new \LogicException("Cannot use the 'entity' method just yet. Use one of the 'find', 'save', 'update' or 'delete' methods first");
+    }
+
+    public function func($name, array $args = [])
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->func($name, $args);
+    }
+
+    public function keyword($keyword)
+    {
+        $sequencer = new TokenSequencer($this->tokenFactory);
+        return $sequencer->keyword($keyword);
+    }
+
+}

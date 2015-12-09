@@ -1,7 +1,5 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Reposition\QueryInterpreter;
 
 /**
@@ -13,7 +11,7 @@ class CompiledQuery
     /**
      * @var string
      */
-    protected $table;
+    protected $collection;
 
     /**
      * @var string
@@ -30,20 +28,24 @@ class CompiledQuery
      */
     protected $calls = [];
 
-    public function __construct($table, $method, $arguments, $calls = [])
-    {
-        $this->setTable($table);
-        $this->setMethod($method);
-        $this->setArguments($arguments);
-        $this->setCalls($calls);
-    }
+    /**
+     * @var string
+     */
+    protected $query = "";
+
+    /**
+     * @var string
+     */
+    protected $primaryKeySequence = "";
 
     /**
      * @param array $arguments
+     * @return $this
      */
-    protected function setArguments(array $arguments)
+    public function setArguments(array $arguments)
     {
         $this->arguments = $arguments;
+        return $this;
     }
 
     /**
@@ -56,26 +58,30 @@ class CompiledQuery
 
     /**
      * @param array $calls
+     * @return $this
      */
-    protected function setCalls(array $calls)
+    public function setCalls(array $calls)
     {
         $this->calls = [];
         foreach ($calls as $call) {
             $this->addCall($call);
         }
+        return $this;
     }
 
     /**
      * @param array $call
+     * @return $this
      * @throws \InvalidArgumentException
      */
-    protected function addCall(array $call)
+    public function addCall(array $call)
     {
         if (count($call) != 2 || empty($call[0]) || empty($call[1])) {
             throw new \InvalidArgumentException("Cannot set query call. Invalid format");
         }
 
         $this->calls[] = $call;
+        return $this;
     }
 
     /**
@@ -88,10 +94,12 @@ class CompiledQuery
 
     /**
      * @param string $method
+     * @return $this
      */
-    protected function setMethod($method)
+    public function setMethod($method)
     {
         $this->method = $method;
+        return $this;
     }
 
     /**
@@ -103,21 +111,57 @@ class CompiledQuery
     }
 
     /**
-     * @param string $table
+     * @param string $collection
+     * @return $this
      */
-    protected function setTable($table)
+    public function setCollection($collection)
     {
-        $this->table = $table;
+        $this->collection = $collection;
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getTable()
+    public function getCollection()
     {
-        return $this->table;
+        return $this->collection;
     }
 
+    /**
+     * @param string $query
+     * @return $this
+     */
+    public function setQuery($query)
+    {
+        $this->query = $query;
+        return $this;
+    }
 
+    /**
+     * @return string
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
 
-} 
+    /**
+     * @return string
+     */
+    public function getPrimaryKeySequence()
+    {
+        return $this->primaryKeySequence;
+    }
+
+    /**
+     * @param string $primaryKeySequence
+     * @return $this
+     */
+    public function setPrimaryKeySequence($primaryKeySequence)
+    {
+        $this->primaryKeySequence = $primaryKeySequence;
+        return $this;
+    }
+
+}

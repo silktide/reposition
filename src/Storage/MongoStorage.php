@@ -19,21 +19,17 @@ class MongoStorage implements StorageInterface
 
     protected $database;
 
-    protected $builder;
-
     protected $interpreter;
 
     protected $hydrator;
 
     public function __construct(
         \MongoDB $database,
-        QueryBuilder $builder,
         MongoQueryInterpreter $interpreter,
         HydratorInterface $hydrator = null,
         NormaliserInterface $normaliser = null
     ) {
         $this->database = $database;
-        $this->builder = $builder;
         $this->interpreter = $interpreter;
         $this->hydrator = $hydrator;
 
@@ -43,11 +39,6 @@ class MongoStorage implements StorageInterface
                 $this->hydrator->setNormaliser($normaliser);
             }
         }
-    }
-
-    public function getQueryBuilder()
-    {
-        return $this->builder;
     }
 
     public function query(Query $query, $entityClass)
@@ -64,7 +55,7 @@ class MongoStorage implements StorageInterface
 
         try {
             $response = call_user_func_array(
-                [$this->database->{$compiledQuery->getTable()}, $compiledQuery->getMethod()],
+                [$this->database->{$compiledQuery->getCollection()}, $compiledQuery->getMethod()],
                 $compiledQuery->getArguments()
             );
         } catch (\MongoException $e) {

@@ -2,10 +2,7 @@
 
 namespace Silktide\Reposition\Exception;
 
-/**
- *
- */
-class QueryException extends \Exception
+class InterpretationException extends \Exception
 {
 
 } 
