@@ -300,7 +300,7 @@ class TokenSequencer implements TokenSequencerInterface
     {
         $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
-            $this->addMixedContentToSequence($ref, "field");
+            $this->ref($ref);
             $this->addNewToSequence("sort-direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
         }
         return $this;
@@ -329,7 +329,7 @@ class TokenSequencer implements TokenSequencerInterface
     {
         $this->addNewToSequence("group");
         foreach ($by as $ref) {
-            $this->addMixedContentToSequence($ref, "field");
+            $this->ref($ref);
         }
         return $this;
     }
