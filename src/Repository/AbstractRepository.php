@@ -489,7 +489,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                     $alias = "";
                 }
                 $parent = "";
-                if (!empty($parent[$alias]) && $parent[$alias] != "this") {
+                if (!empty($parents[$alias]) && $parents[$alias] != "this") {
                     $parent = $parents[$alias];
                 }
                 $query->includeEntity($metadata, $alias, $parent);
