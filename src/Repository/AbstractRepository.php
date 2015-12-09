@@ -436,7 +436,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $query->ref($field)->op("=")->val($value);
     }
 
-    protected function addIncludes(TokenSequencerInterface $query, $includeRelationships)
+    protected function addIncludes(TokenSequencerInterface $query, $includeRelationships = null)
     {
         $includeRelationships = is_null($includeRelationships)? $this->includeRelationshipsByDefault: $includeRelationships;
         if (!empty($includeRelationships)) {
