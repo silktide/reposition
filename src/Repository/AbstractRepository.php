@@ -412,6 +412,33 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function delete($id)
     {
+        // cascade delete operation for registered relationships
+        foreach ($this->relationshipCascade as $alias => $childRepo) {
+            /** @var RepositoryInterface $childRepo */
+            $relationship = $this->entityMetadata->getRelationship($alias);
+            // skip if this relationship is many to many
+            if ($relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] == EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
+                continue;
+            }
+
+            if (empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])) {
+                continue;
+            }
+
+            // TODO: fix for relationships that have an "our field" that is not the primary key
+            // build and execute a delete query for the relationship
+            $childMetadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
+            $childField = $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD];
+
+            $delete = $this->queryBuilder->delete($childMetadata)
+                ->where()
+                ->ref($childField)
+                ->op("=")
+                ->val($id);
+
+            $this->doQuery($delete, false);
+        }
+
         $query = $this->queryBuilder->delete($this->entityMetadata)
             ->where()
             ->ref($this->entityMetadata->getPrimaryKey())
