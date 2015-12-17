@@ -57,6 +57,14 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected $includeRelationshipsByDefault = false;
 
     /**
+     * List of relationships to cascade
+     * When saving, deleting or updating the parent, perform the same operation on the child entities
+     *
+     * @var array
+     */
+    protected $relationshipCascade = [];
+
+    /**
      * @param EntityMetadata $entityMetadata
      * @param QueryBuilderInterface $queryBuilder
      * @param StorageInterface $storage
@@ -107,6 +115,13 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     public function getEntityMetadata()
     {
         return $this->entityMetadata;
+    }
+
+    public function cascadeRelationship($alias, RepositoryInterface $repository)
+    {
+        if ($this->entityMetadata->hasRelationship($alias)) {
+            $this->relationshipCascade[$alias] = $repository;
+        }
     }
 
     /**
@@ -173,9 +188,18 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         // save "* to many" relationships
         foreach ($this->entityMetadata->getRelationships() as $alias => $relationship) {
             $type = $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE];
+            $property = $relationship[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY];
+
+            $childValue = $this->entityMetadata->getEntityValue($entity, $property);
 
             if ($type == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
                 // This covers "many to one" as well
+                if (!empty($this->relationshipCascade[$alias])) {
+                    /** @var RepositoryInterface $childRepo */
+                    $childRepo = $this->relationshipCascade[$alias];
+                    $childRepo->save($childValue);
+                }
+                // nothing more to do for One to One / Many to One
                 continue;
             }
 
@@ -185,10 +209,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
              * The corresponding values for both the parent and child entities
              */
 
-            // get the collection object for this relationship
-            $property = $relationship[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY];
-            $collection = $this->entityMetadata->getEntityValue($entity, $property);
-            if (!$collection instanceof Collection) {
+            if (!$childValue instanceof Collection) {
                 // if this isn't a collection object we can't process this relationship
                 continue;
             }
@@ -222,21 +243,45 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             // update the relationship
             if ($type == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_MANY) {
-                $this->saveOneToMany($collection, $childMetadata, $ourValue, $theirField);
+                $this->saveOneToMany($alias, $childValue, $childMetadata, $ourValue, $theirField);
             } elseif ($type == EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
-                $this->saveManyToMany($relationship, $collection, $childMetadata, $ourValue, $ourField, $theirField);
+                $this->saveManyToMany($relationship, $alias, $childValue, $childMetadata, $ourValue, $ourField, $theirField);
             }
         }
 
         return $saveResult;
     }
 
-    protected function saveOneToMany(Collection $collection, EntityMetadata $childMetadata, $ourValue, $theirField) {
-        // Both operations are updates; one sets the parent value on the child, the other removes any existing values
+    protected function saveOneToMany($alias, Collection $collection, EntityMetadata $childMetadata, $ourValue, $theirField) {
+        $childPk = $childMetadata->getPrimaryKey();
+
+        if (!empty($this->relationshipCascade[$alias])) {
+            // cascading relationships must deal with each entity individually
+            echo "\nfields: " . print_r($childMetadata->getFieldNames(), true);
+            /** @var RepositoryInterface $childRepo */
+            $childRepo = $this->relationshipCascade[$alias];
+            // save all entities currently in the collection
+            foreach ($collection as $child) {
+                $childRepo->save($child);
+            }
+            $removed = $collection->getRemovedEntities();
+            if (!empty($removed)) {
+                // delete any that have been removed
+                $delete = $this->queryBuilder->delete($childMetadata)
+                    ->where()
+                    ->ref($childPk)
+                    ->op("IN");
+                $delete = $this->createFieldValueList($delete, $childMetadata, $removed, $childPk);
+                $this->doQuery($delete, false);
+            }
+        }
+
+        // For non cascading operations, both adding and removing are updates; one sets the parent value on the child,
+        // the other removes any existing values.
         // The two are so similar we can abstract the differences to the following array:
         $updates = [
             [
-                "entities" => $collection->getAddedEntities(),
+                "entities" => $collection->toArray(false),
                 "value" => $ourValue
             ],
             [
@@ -251,7 +296,6 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 continue;
             }
 
-            $childPk = $childMetadata->getPrimaryKey();
 
             $query = $this->queryBuilder->update($childMetadata)
                 ->ref($theirField)
@@ -263,11 +307,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             // TODO: replace this with a "list" token
             // Create the IN clause so we can add it to the query
-            $inClause = $this->queryBuilder->expression();
-            foreach ($update["entities"] as $child) {
-                $inClause->val($childMetadata->getEntityValue($child, $childPk));
-            }
-            $query->closure($inClause);
+            $this->createFieldValueList($query, $childMetadata, $update["entities"], $childPk);
 
             $this->doQuery($query, false);
         }
@@ -275,12 +315,23 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
     protected function saveManyToMany(
         array $relationship,
+        $alias,
         Collection $collection,
         EntityMetadata $childMetadata,
         $ourValue,
         $ourField,
         $theirField
     ) {
+        if (!empty($this->relationshipCascade[$alias])) {
+            /** @var RepositoryInterface $childRepo */
+            $childRepo = $this->relationshipCascade[$alias];
+
+            // save all entities currently in the collection
+            foreach ($collection->getAddedEntities() as $child) {
+                $childRepo->save($child);
+            }
+        }
+
         // We will be doing operations on an intermediary join table. As Reposition works with EntityMetadata, we
         // need to create the metadata for the intermediary
         $intermediaryMetadata = $this->metadataProvider->getEntityMetadataForIntermediary(
@@ -302,7 +353,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             // create an array of values to use, for each entity we're adding
             foreach ($added as $child) {
-                // TODO: this won't work as we're using a field instead of a property name
+                // TODO: this won't work reliably as we're using a field instead of a property name (different case)
                 $entityArray = [
                     $intermediaryOurField => $ourValue,
                     $intermediaryTheirField => $childMetadata->getEntityValue($child, $theirField)
@@ -325,14 +376,35 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             // TODO: replace this with a "list"
             // Create the IN clause so we can add it to the query
-            $inClause = $this->queryBuilder->expression();
-            foreach ($removed as $child) {
-                $inClause->val($childMetadata->getEntityValue($child, $theirField));
-            }
-            $delete->closure($inClause);
+            $delete = $this->createFieldValueList($delete, $childMetadata, $removed, $theirField);
 
             $this->doQuery($delete, false);
         }
+    }
+
+    /**
+     * @param TokenSequencerInterface $query
+     * @param EntityMetadata $metadata
+     * @param array $list
+     * @param string $field
+     * @param bool $closed
+     * @return TokenSequencerInterface
+     */
+    protected function createFieldValueList(
+        TokenSequencerInterface $query,
+        EntityMetadata $metadata,
+        $list,
+        $field,
+        $closed = true
+    ) {
+        $clause = ($closed)? $this->queryBuilder->expression(): $query;
+        foreach ($list as $entity) {
+            $clause->val($metadata->getEntityValue($entity, $field));
+        }
+        if ($closed) {
+            $query->closure($clause);
+        }
+        return $query;
     }
 
     /**
