@@ -182,4 +182,4 @@ interface TokenSequencerInterface
      */
     public function keyword($keyword);
 
-} 
+}
