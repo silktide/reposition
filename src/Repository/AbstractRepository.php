@@ -257,7 +257,6 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
         if (!empty($this->relationshipCascade[$alias])) {
             // cascading relationships must deal with each entity individually
-            echo "\nfields: " . print_r($childMetadata->getFieldNames(), true);
             /** @var RepositoryInterface $childRepo */
             $childRepo = $this->relationshipCascade[$alias];
             // save all entities currently in the collection
