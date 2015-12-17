@@ -41,14 +41,25 @@ class Collection implements \Iterator
         if (!method_exists($entity, $this->entityIdGetter)) {
             throw new CollectionException("The ID getter method '{$this->entityIdGetter}' does not exist on the entity");
         }
+        $useObjectHash = false;
         $search = $entity->{$this->entityIdGetter}();
+
+        // if the search value is empty, this is a new entity and therefore will not have an ID to check against.
+        // In this case we want to check the object hash to see if the same object instance is in the collection
+        if (empty($search)) {
+            $search = spl_object_hash($entity);
+            $useObjectHash = true;
+        }
 
         if ($entities === null) {
             $entities = $this->entities;
         }
 
         foreach ($entities as $i => $existingEntity) {
-            if ($existingEntity->{$this->entityIdGetter}() == $search) {
+            if (
+                (!$useObjectHash && $existingEntity->{$this->entityIdGetter}() == $search) ||
+                ($useObjectHash && spl_object_hash($existingEntity) == $search)
+            ) {
                 return $i;
             }
         }
