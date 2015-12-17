@@ -181,7 +181,8 @@ class EntityMetadata
                     break;
                 case self::METADATA_FIELD_GETTER:
                 case self::METADATA_FIELD_SETTER:
-                    $this->validateClassMethod($value, $type);
+                    // TODO: get method validation working with discriminated methods
+                    //$this->validateClassMethod($value, $type);
                     $finalMetadata[$type] = $value;
                     break;
             }
