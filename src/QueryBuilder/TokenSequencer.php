@@ -120,14 +120,14 @@ class TokenSequencer implements TokenSequencerInterface
         $this->querySequence = array_merge($this->querySequence, $sequence);
     }
 
-    protected function addMixedContentToSequence($content, $defaultType)
+    protected function addMixedContentToSequence($content)
     {
         if ($content instanceof TokenSequencer) {
             $this->closure($content);
         } elseif ($content instanceof Token) {
             $this->addToSequence($content);
         } else {
-            $this->addNewToSequence($defaultType, $content);
+            $this->val($content);
         }
     }
 
@@ -370,11 +370,11 @@ class TokenSequencer implements TokenSequencerInterface
             } elseif ($content instanceOf Token) {
                 $this->addToSequence($content);
             } elseif (is_array($content)) {
-                foreach ($content as $subcontent) {
-                    $this->addMixedContentToSequence($subcontent, "value");
+                foreach ($content as $subContent) {
+                    $this->addMixedContentToSequence($subContent);
                 }
             } else {
-                $this->addNewToSequence("value", $content);
+                $this->val($content);
             }
         }
 
