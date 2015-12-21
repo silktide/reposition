@@ -150,7 +150,7 @@ class EntityMetadataTest extends \PHPUnit_Framework_TestCase {
     {
         $metadata[EntityMetadata::METADATA_RELATIONSHIP_PROPERTY] = "collection";
 
-        $entity = "test";
+        $entity = "Silktide\\Reposition\\Metadata\\EntityMetadata";
         $entityMetadata = new EntityMetadata("Silktide\\Reposition\\Metadata\\EntityMetadata");
         $entityMetadata->addRelationshipMetadata($entity, $metadata);
 

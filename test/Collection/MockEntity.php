@@ -17,6 +17,11 @@ class MockEntity
         $this->id = $id;
     }
 
+    public function getId()
+    {
+        return $this->id;
+    }
+
     public function getProperty()
     {
         return $this->property;
