@@ -4,6 +4,8 @@ namespace Silktide\Reposition\Storage;
 
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
+use Silktide\Reposition\Storage\Logging\QueryLogProcessorInterface;
+use Silktide\Reposition\Storage\Logging\ErrorLogProcessorInterface;
 
 /**
  *
@@ -29,5 +31,15 @@ interface StorageInterface
      * @return bool
      */
     public function hasEntityMetadataProvider();
+
+    /**
+     * @param QueryLogProcessorInterface $processor
+     */
+    public function setQueryLogProcessor(QueryLogProcessorInterface $processor);
+
+    /**
+     * @param ErrorLogProcessorInterface $processor
+     */
+    public function setErrorLogProcessor(ErrorLogProcessorInterface $processor);
 
 } 
