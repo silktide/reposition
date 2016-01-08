@@ -30,3 +30,6 @@ services:
 
     collectionFactory:
       class: Silktide\Reposition\Collection\CollectionFactory
+
+    metadataProvider:
+      aliasOf: "@repositoryManager"
