@@ -208,6 +208,11 @@ class EntityMetadata
         return $this->fields;
     }
 
+    public function getField($name)
+    {
+        return empty($this->fields[$name])? null: $this->fields[$name];
+    }
+
     protected function validateFieldType($name, $type)
     {
         switch ($type) {
