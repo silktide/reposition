@@ -12,6 +12,7 @@ class EntityMetadata
     const METADATA_FIELD_AUTO_INCREMENTING = "auto incrementing";
     const METADATA_FIELD_GETTER = "getter";
     const METADATA_FIELD_SETTER = "setter";
+    const METADATA_FIELD_CAN_BE_NULL = "can be null";
 
     const METADATA_INDEX_TYPE = "index type";
     const METADATA_INDEX_NAME = "index name";
@@ -172,13 +173,17 @@ class EntityMetadata
         $finalMetadata = [];
         foreach ($metadata as $type => $value) {
             switch ($type) {
+                // field type (enumerated)
                 case self::METADATA_FIELD_TYPE:
                     $this->validateFieldType($name, $value);
                     $finalMetadata[self::METADATA_FIELD_TYPE] = $value;
                     break;
+                // boolean values
                 case self::METADATA_FIELD_AUTO_INCREMENTING:
-                    $finalMetadata[self::METADATA_FIELD_AUTO_INCREMENTING] = (bool) $value;
+                case self::METADATA_FIELD_CAN_BE_NULL:
+                    $finalMetadata[$type] = (bool) $value;
                     break;
+                // string values
                 case self::METADATA_FIELD_GETTER:
                 case self::METADATA_FIELD_SETTER:
                     // TODO: get method validation working with discriminated methods
