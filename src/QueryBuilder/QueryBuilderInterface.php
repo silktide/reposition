@@ -7,7 +7,7 @@ use Silktide\Reposition\Metadata\EntityMetadata;
 /**
  *
  */
-interface QueryBuilderInterface
+interface QueryBuilderInterface extends TokenSequencerInterface
 {
 
     const PRIMARY_KEY = "id";
