@@ -129,7 +129,7 @@ class QueryBuilder extends TokenSequencer implements QueryBuilderInterface
     public function notL()
     {
         $sequencer = new TokenSequencer($this->tokenFactory);
-        return $sequencer->not();
+        return $sequencer->notL();
     }
 
     public function andL()
