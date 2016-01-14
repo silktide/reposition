@@ -2,6 +2,7 @@
 
 namespace Silktide\Reposition\QueryBuilder;
 
+use Silktide\Reposition\Exception\TokenDefinitionException;
 use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 use Silktide\Reposition\Exception\TokenParseException;
@@ -123,7 +124,7 @@ class TokenSequencer implements TokenSequencerInterface
     protected function addMixedContentToSequence($content)
     {
         if ($content instanceof TokenSequencer) {
-            $this->closure($content);
+            $this->mergeSequence($content->getSequence());
         } elseif ($content instanceof Token) {
             $this->addToSequence($content);
         } else {
@@ -300,7 +301,16 @@ class TokenSequencer implements TokenSequencerInterface
     {
         $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
-            $this->ref($ref);
+            if (is_array($direction) && count($direction) == 2) {
+                $tokens = $direction[0];
+                $direction = $direction[1];
+                if (!$tokens instanceof TokenSequencerInterface) {
+                    throw new TokenDefinitionException("When passing sort conditions as an array pair, the first element must be a token sequence. e.g. [\$sequence, \$direction]");
+                }
+                $this->mergeSequence($tokens->getSequence());
+            } else {
+                $this->ref($ref);
+            }
             $this->addNewToSequence("sort-direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
         }
         return $this;
