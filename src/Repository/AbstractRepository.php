@@ -129,9 +129,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function find($id, $includeRelationships = null)
     {
-        $query = $this->queryBuilder->find($this->entityMetadata);
-        $this->addIncludes($query, $includeRelationships);
-        $this->createWhereFromFilters($query, [$this->entityMetadata->getPrimaryKey() => $id], true, true);
+        $query = $this->getFindQuery($id, $includeRelationships);
         return $this->doQuery($query);
     }
 
@@ -140,10 +138,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
      */
     public function filter(array $filters, array $sort = [], $limit = 0, array $options = [], $includeRelationships = null)
     {
-        $query = $this->queryBuilder->find($this->entityMetadata);
-        $this->addIncludes($query, $includeRelationships);
-
-        $this->createWhereFromFilters($query, $filters, true, true);
+        $query = $this->getFilterQuery($filters, $includeRelationships);
 
         if (!empty($sort)) {
             $query->sort($sort);
@@ -154,6 +149,19 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         }
 
         return $this->doQuery($query);
+    }
+
+    protected function getFilterQuery(array $filters, $includeRelationships = null)
+    {
+        $query = $this->queryBuilder->find($this->entityMetadata);
+        $this->addIncludes($query, $includeRelationships);
+        $this->createWhereFromFilters($query, $filters, true, true);
+        return $query;
+    }
+
+    protected function getFindQuery($id, $includeRelationships = null)
+    {
+        return $this->getFilterQuery([$this->entityMetadata->getPrimaryKey() => $id], $includeRelationships);
     }
 
     /**
@@ -424,26 +432,36 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 continue;
             }
 
-            // TODO: fix for relationships that have an "our field" that is not the primary key
             // build and execute a delete query for the relationship
             $childMetadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
             $childField = $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD];
 
-            $delete = $this->queryBuilder->delete($childMetadata)
-                ->where()
-                ->ref($childField)
-                ->op("=")
-                ->val($id);
+            $delete = $this->getDeleteQuery($id, $childMetadata, $childField);
 
             $this->doQuery($delete, false);
         }
 
-        $query = $this->queryBuilder->delete($this->entityMetadata)
-            ->where()
-            ->ref($this->entityMetadata->getPrimaryKey())
-            ->op("=")
-            ->val($id);
+        $query = $this->getDeleteQuery($id);
         return $this->doQuery($query, false);
+    }
+
+    protected function getDeleteQuery($value, EntityMetadata $metadata = null, $field = null)
+    {
+        if (empty($metadata)) {
+            $metadata = $this->entityMetadata;
+        }
+
+        if (empty($field)) {
+            $field = $metadata->getPrimaryKey();
+        }
+
+        $query = $this->queryBuilder->delete($metadata);
+        $query
+            ->where()
+            ->ref($field)
+            ->op("=")
+            ->val($value);
+        return $query;
     }
 
     public function deleteWithFilter(array $filters)
