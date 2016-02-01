@@ -199,8 +199,8 @@ class TokenParser
 
             if (!$optional && !$atLeastOnce) {
                 throw new TokenParseException("Did not find a sequence for '$type'." . (!empty($e)? " - " . $e->getMessage(): ""));
-            } elseif (!empty($definition["flag"])) {
-                $optionalFlags[$definition["flag"]] = true;
+            } elseif (!empty($tokenDefinition["flag"]) && $atLeastOnce) {
+                $optionalFlags[$tokenDefinition["flag"]] = true;
             }
         }
         return $position;
