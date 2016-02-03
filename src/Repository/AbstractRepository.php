@@ -524,6 +524,15 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 throw new RepositoryException("No field could be found for the relationship '$field'");
             }
 
+            if (is_object($value)) {
+                $valueMetadata = $this->metadataProvider->getEntityMetadata($value);
+                $theirField = !empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
+                    ? $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
+                    : $valueMetadata->getPrimaryKey();
+
+                $value = $valueMetadata->getEntityValue($value, $theirField);
+            }
+
             $field = $ourField;
         }
 
