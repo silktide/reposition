@@ -274,11 +274,8 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $removed = $collection->getRemovedEntities();
             if (!empty($removed)) {
                 // delete any that have been removed
-                $delete = $this->queryBuilder->delete($childMetadata)
-                    ->where()
-                    ->ref($childPk)
-                    ->op("IN");
-                $delete = $this->createFieldValueList($delete, $childMetadata, $removed, $childPk);
+                $delete = $this->queryBuilder->delete($childMetadata);
+                $this->createWhereFromFilters($delete, [$childPk => $this->condition("in", $removed)]);
                 $this->doQuery($delete, false);
             }
         }
@@ -307,14 +304,8 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query = $this->queryBuilder->update($childMetadata)
                 ->ref($theirField)
                 ->op("=")
-                ->val($update["value"])
-                ->where()
-                ->ref($childPk)
-                ->op("IN");
-
-            // TODO: replace this with a "list" token
-            // Create the IN clause so we can add it to the query
-            $this->createFieldValueList($query, $childMetadata, $update["entities"], $childPk);
+                ->val($update["value"]);
+            $this->createWhereFromFilters($query, [$childPk => $this->condition("in", $update["entities"])]);
 
             $this->doQuery($query, false);
         }
@@ -372,46 +363,13 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         if (!empty($removed)) {
             $delete = $this->queryBuilder->delete($intermediaryMetadata);
             // delete rows where the parent value is X and the child value is in the list
-            $delete
-                ->where()
-                ->ref($intermediaryOurField)
-                ->op("=")
-                ->val($ourValue)
-                ->andL()
-                ->ref($intermediaryTheirField)
-                ->op("IN");
-
-            // TODO: replace this with a "list"
-            // Create the IN clause so we can add it to the query
-            $delete = $this->createFieldValueList($delete, $childMetadata, $removed, $theirField);
-
+            $filters = [
+                $intermediaryOurField => $ourValue,
+                $intermediaryTheirField => $this->condition("in", $removed)
+            ];
+            $this->createWhereFromFilters($delete, $filters);
             $this->doQuery($delete, false);
         }
-    }
-
-    /**
-     * @param TokenSequencerInterface $query
-     * @param EntityMetadata $metadata
-     * @param array $list
-     * @param string $field
-     * @param bool $closed
-     * @return TokenSequencerInterface
-     */
-    protected function createFieldValueList(
-        TokenSequencerInterface $query,
-        EntityMetadata $metadata,
-        $list,
-        $field,
-        $closed = true
-    ) {
-        $clause = ($closed)? $this->queryBuilder->expression(): $query;
-        foreach ($list as $entity) {
-            $clause->val($metadata->getEntityValue($entity, $field));
-        }
-        if ($closed) {
-            $query->closure($clause);
-        }
-        return $query;
     }
 
     /**
@@ -456,11 +414,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         }
 
         $query = $this->queryBuilder->delete($metadata);
-        $query
-            ->where()
-            ->ref($field)
-            ->op("=")
-            ->val($value);
+        $this->createWhereFromFilters($query, [$field => $value]);
         return $query;
     }
 
@@ -487,6 +441,21 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         return $this->doQuery($query, false);
     }
 
+    public function condition($operator, $value, $inverted = false)
+    {
+        $operator = strtolower($operator);
+        $inverted = (bool) $inverted;
+
+        if ($operator == "in" && (!is_array($value) || empty($value))) {
+            throw new \InvalidArgumentException("The value for an IN condition must be an array with at least one value");
+        }
+        if ($operator == "between" && (!is_array($value) || count($value) != 2)) {
+            throw new \InvalidArgumentException("The value for a BETWEEN condition must be an array containing exactly two values");
+        }
+
+        return ["op" => $operator, "value" => $value, "inverted" => $inverted];
+    }
+
     /**
      * @param TokenSequencerInterface $query
      * @param bool $createEntity
@@ -499,7 +468,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
     }
 
-    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $startWithWhere = true, $prefixFieldsWithCollection = false)
+    protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $prefixFieldsWithCollection = false, $startWithWhere = true)
     {
         if (empty($filters)) {
             return;
@@ -509,25 +478,43 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query->where();
         }
 
-        // we need to prepend "andL" to all but the first field, so
-        // get the values for the last field and remove it from the array
-        reset($filters);
-        $firstField = key($filters);
-        $firstValue = array_shift($filters);
+        // normalise filters
+        $normalisedFilters = [];
+        foreach ($filters as $field => $conditions) {
+            if (!is_array($conditions)) {
+                $normalisedFilters[] = ["field" => $field, "op" => "=", "value" => $conditions];
+            } else {
+                if (isset($condition["op"], $condition["value"])) {
+                    $condition = [$condition];
+                }
+                // condition should now be an array of operators and values
+                foreach ($condition as $singleCondition) {
+                    if (!is_array($singleCondition) || !isset($singleCondition["op"], $singleCondition["value"])) {
+                        throw new \InvalidArgumentException("The filter condition for the field '$field' is malformed");
+                    }
+                    $singleCondition["field"] = $field;
+                    $normalisedFilters[] = $singleCondition;
+                }
+            }
+        }
 
-        // filter first field
-        $this->addComparisonToQuery($query, $firstField, $firstValue, $prefixFieldsWithCollection);
-
-        // create filters
-        foreach ($filters as $field => $value) {
-            $query->andL();
-            $this->addComparisonToQuery($query, $field, $value);
+        // add filters
+        $addLogicOperator = false;
+        foreach ($normalisedFilters as $condition) {
+            $this->addConditionToQuery($query, $condition, $prefixFieldsWithCollection, $addLogicOperator);
+            $addLogicOperator = true;
         }
 
     }
 
-    protected function addComparisonToQuery(TokenSequencerInterface $query, $field, $value, $prefixFieldWithCollection = false)
+    protected function addConditionToQuery(TokenSequencerInterface $query, $condition, $prefixFieldWithCollection = false, $addLogicOperator = true)
     {
+        // normalise $condition
+        $field = $condition["field"];
+        $op = strtolower($condition["op"]);
+        $value = $condition["value"];
+        $inverted = (bool) $condition["inverted"];
+
         if ($this->entityMetadata->hasRelationShip($field)) {
             $relationship = $this->entityMetadata->getRelationship($field);
             if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
@@ -558,7 +545,28 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $field = $this->collectionName . "." . $field;
         }
 
-        $query->ref($field)->op("=")->val($value);
+        // sprinkle with logic operators to taste
+        if ($addLogicOperator) {
+            // We do not need to allow for the OR operator. Complex queries that require OR are best written in custom methods
+            $query->andL();
+        }
+        if ($inverted) {
+            $query->notL();
+        }
+
+        // add condition to the query
+        $query->ref($field)->op($op);
+        switch($op) {
+            case "in":
+                $query->closure($value);
+                break;
+            case "between":
+                $query->val($value[0])->andL()->val($value[1]);
+                break;
+            default;
+                $query->val($value);
+                break;
+        }
     }
 
     protected function addIncludes(TokenSequencerInterface $query, $includeRelationships = null)
