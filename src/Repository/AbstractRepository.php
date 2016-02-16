@@ -484,11 +484,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             if (!is_array($conditions)) {
                 $normalisedFilters[] = ["field" => $field, "op" => "=", "value" => $conditions];
             } else {
-                if (isset($condition["op"], $condition["value"])) {
-                    $condition = [$condition];
+                if (isset($conditions["op"], $conditions["value"])) {
+                    $conditions = [$conditions];
                 }
                 // condition should now be an array of operators and values
-                foreach ($condition as $singleCondition) {
+                foreach ($conditions as $singleCondition) {
                     if (!is_array($singleCondition) || !isset($singleCondition["op"], $singleCondition["value"])) {
                         throw new \InvalidArgumentException("The filter condition for the field '$field' is malformed");
                     }
