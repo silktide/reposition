@@ -513,7 +513,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $field = $condition["field"];
         $op = strtolower($condition["op"]);
         $value = $condition["value"];
-        $inverted = (bool) $condition["inverted"];
+        $inverted = !empty($condition["inverted"]);
 
         if ($this->entityMetadata->hasRelationShip($field)) {
             $relationship = $this->entityMetadata->getRelationship($field);
