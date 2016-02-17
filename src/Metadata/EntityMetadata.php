@@ -252,19 +252,25 @@ class EntityMetadata
         if (!isset($metadata[self::METADATA_RELATIONSHIP_TYPE])) {
             throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying a relationship type");
         }
-        if (!isset($metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
-            throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying the property of the parent entity that the relationship refers to");
-        }
-        if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
-            throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
-        }
+
         $generatedGetter = false;
-        if (!isset($metadata[self::METADATA_RELATIONSHIP_GETTER])) {
-            $metadata[self::METADATA_RELATIONSHIP_GETTER] = "get" . ucfirst($metadata[self::METADATA_RELATIONSHIP_PROPERTY]);
-            $generatedGetter = true;
-        }
-        if (!method_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_GETTER])) {
-            throw new MetadataException("Could not find the" . ($generatedGetter? " generated": "") . " getter method '{$metadata[self::METADATA_RELATIONSHIP_GETTER]}' on the entity '{$this->entity}'");
+        if (!empty($this->entity)) {
+            if (!isset($metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+                throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying the property of the parent entity that the relationship refers to");
+            }
+            if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+                throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
+            }
+            if (!isset($metadata[self::METADATA_RELATIONSHIP_GETTER])) {
+                $metadata[self::METADATA_RELATIONSHIP_GETTER] = "get" . ucfirst($metadata[self::METADATA_RELATIONSHIP_PROPERTY]);
+                $generatedGetter = true;
+            }
+            if (!method_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_GETTER])) {
+                throw new MetadataException("Could not find the" . ($generatedGetter? " generated": "") . " getter method '{$metadata[self::METADATA_RELATIONSHIP_GETTER]}' on the entity '{$this->entity}'");
+            }
+        } else {
+            $metadata[self::METADATA_RELATIONSHIP_PROPERTY] = "";
+            $metadata[self::METADATA_RELATIONSHIP_GETTER] = "";
         }
         $type = $metadata[self::METADATA_RELATIONSHIP_TYPE];
         $finalMetadata[self::METADATA_ENTITY] = $entity;
