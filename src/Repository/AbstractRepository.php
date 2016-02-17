@@ -336,11 +336,20 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $relationship[EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE]
         );
 
-        // generate the field names used on this table and create field metadata for them
-        $intermediaryOurField = $this->entityMetadata->getCollection() . "_" . $ourField;
-        $intermediaryTheirField = $childMetadata->getCollection() . "_" . $theirField;
-        $intermediaryMetadata->addFieldMetadata($intermediaryOurField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
-        $intermediaryMetadata->addFieldMetadata($intermediaryTheirField, [EntityMetadata::METADATA_FIELD_TYPE => "string"]);
+        // generate the relationship metadata used on this collection
+        $intermediaryRelationship = [
+            EntityMetadata::METADATA_RELATIONSHIP_TYPE => EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_ONE
+        ];
+        $manyToManyRelationships = [
+            "ours" => $this->entityMetadata->getCollection() . "_" . $ourField,
+            "theirs" => $childMetadata->getCollection() . "_" . $theirField
+        ];
+
+        foreach ($manyToManyRelationships as $relationshipAlias => $intermediaryOurField) {
+            $intermediaryRelationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD] = $intermediaryOurField;
+            $intermediaryRelationship[EntityMetadata::METADATA_RELATIONSHIP_ALIAS] = $relationshipAlias;
+            $intermediaryMetadata->addRelationshipMetadata($this->entityMetadata->getEntity(), $intermediaryRelationship);
+        }
 
         // process added and removed children
         $added = $collection->getAddedEntities();
@@ -351,10 +360,10 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             // create an array of values to use, for each entity we're adding
             foreach ($added as $child) {
-                // TODO: this won't work reliably as we're using a field instead of a property name (different case)
+                // we have to use the actual field names here as we're saving an array, rather than a class instance
                 $entityArray = [
-                    $intermediaryOurField => $ourValue,
-                    $intermediaryTheirField => $childMetadata->getEntityValue($child, $theirField)
+                    $manyToManyRelationships["ours"] => $ourValue,
+                    $manyToManyRelationships["theirs"] => $childMetadata->getEntityValue($child, $theirField)
                 ];
                 $insert->entity($entityArray);
             }
@@ -364,8 +373,8 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $delete = $this->queryBuilder->delete($intermediaryMetadata);
             // delete rows where the parent value is X and the child value is in the list
             $filters = [
-                $intermediaryOurField => $ourValue,
-                $intermediaryTheirField => $this->condition("in", $removed)
+                "ours" => $ourValue,
+                "theirs" => $this->condition("in", $removed)
             ];
             $this->createWhereFromFilters($delete, $filters);
             $this->doQuery($delete, false);
@@ -507,6 +516,13 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
     }
 
+    /**
+     * @param TokenSequencerInterface $query
+     * @param $condition
+     * @param bool|false $prefixFieldWithCollection
+     * @param bool|true $addLogicOperator
+     * @throws RepositoryException
+     */
     protected function addConditionToQuery(TokenSequencerInterface $query, $condition, $prefixFieldWithCollection = false, $addLogicOperator = true)
     {
         // normalise $condition
@@ -515,8 +531,10 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         $value = $condition["value"];
         $inverted = !empty($condition["inverted"]);
 
-        if ($this->entityMetadata->hasRelationShip($field)) {
-            $relationship = $this->entityMetadata->getRelationship($field);
+        $related = $field;
+
+        if ($query->getEntityMetadata()->hasRelationShip($field)) {
+            $relationship = $query->getEntityMetadata()->getRelationship($field);
             if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
                 $ourField = null;
             } else {
@@ -529,16 +547,17 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 throw new RepositoryException("No field could be found for the relationship '$field'");
             }
 
-            if (is_object($value)) {
-                $valueMetadata = $this->metadataProvider->getEntityMetadata($value);
-                $theirField = !empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
-                    ? $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
-                    : $valueMetadata->getPrimaryKey();
-
-                $value = $valueMetadata->getEntityValue($value, $theirField);
-            }
-
             $field = $ourField;
+            $related = $relationship;
+        }
+
+        // if any value is an entity, get the value from the entity for the field we're looking for
+        if (is_array($value)) {
+            foreach ($value as $i => $entity) {
+                $value[$i] = $this->getRelatedValueFromEntity($entity, $related);
+            }
+        } else {
+            $value = $this->getRelatedValueFromEntity($value, $related);
         }
 
         if ($prefixFieldWithCollection && strpos($field, ".") === false) {
@@ -567,6 +586,22 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 $query->val($value);
                 break;
         }
+    }
+
+    private function getRelatedValueFromEntity($entity, $relationship)
+    {
+        // only process if this is an object
+        if (is_object($entity)) {
+            $childMetadata = $this->metadataProvider->getEntityMetadata($entity);
+            $theirField = $relationship;
+            if (is_array($relationship)) {
+                $theirField = !empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD])
+                    ? $relationship[EntityMetadata::METADATA_RELATIONSHIP_THEIR_FIELD]
+                    : $childMetadata->getPrimaryKey();
+            }
+            $entity = $childMetadata->getEntityValue($entity, $theirField);
+        }
+        return $entity;
     }
 
     protected function addIncludes(TokenSequencerInterface $query, $includeRelationships = null)
