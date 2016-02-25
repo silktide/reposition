@@ -299,6 +299,7 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function sort(array $by)
     {
+        $collection = $this->getEntityMetadata()->getCollection();
         $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
             if (is_array($direction) && count($direction) == 2) {
@@ -309,6 +310,10 @@ class TokenSequencer implements TokenSequencerInterface
                 }
                 $this->mergeSequence($tokens->getSequence());
             } else {
+                // add collection reference if it isn't present
+                if (strpos($ref, ".") === false) {
+                    $ref = "$collection.$ref";
+                }
                 $this->ref($ref);
             }
             $this->addNewToSequence("sort-direction", ($direction == self::SORT_DESC)? $direction: self::SORT_ASC );
