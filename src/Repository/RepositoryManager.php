@@ -105,7 +105,19 @@ class RepositoryManager implements EntityMetadataProviderInterface
         try {
             $repository = $this->getRepositoryFor($entity);
         } catch (RepositoryException $e) {
-            throw new MetadataException("Cannot get metadata, no repository class exists for '$entity'");
+            // check for base classes
+            $parent = $entity;
+            while($parent = get_parent_class($parent)) {
+                try {
+                    $repository = $this->getRepositoryFor($parent);
+                    break;
+                } catch (RepositoryException $e) {
+
+                }
+            }
+            if (empty($repository)) {
+                throw new MetadataException("Cannot get metadata, no repository class exists for '$entity'");
+            }
         }
 
         if (!$repository instanceof MetadataRepositoryInterface) {
