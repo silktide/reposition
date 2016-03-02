@@ -169,7 +169,7 @@ class TokenSequencer implements TokenSequencerInterface
         $childAlias = empty($collectionAlias)? $childCollection: $collectionAlias;
 
         // determine which entity to join on (the parent)
-        $parentMetadata = $this->entityMetadata;
+        $parentMetadata = $this->getEntityMetadata();
         if (!empty($parent)) {
             if (empty($this->includes[$parent])) {
                 throw new TokenParseException("Cannot include the entity '$childEntity'. The parent entity '$parent' has not yet been included");
@@ -299,7 +299,8 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function sort(array $by)
     {
-        $collection = $this->getEntityMetadata()->getCollection();
+        $metadata = $this->getEntityMetadata();
+        $collection = empty($metadata)? "": $metadata->getCollection();
         $this->addNewToSequence("sort");
         foreach ($by as $ref => $direction) {
             if (is_array($direction) && count($direction) == 2) {
