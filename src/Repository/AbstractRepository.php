@@ -535,12 +535,18 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
         if ($query->getEntityMetadata()->hasRelationShip($field)) {
             $relationship = $query->getEntityMetadata()->getRelationship($field);
-            if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] != EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_ONE) {
+            if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_MANY) {
                 $ourField = null;
             } else {
                 $ourField = empty($relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD])
                     ? null
                     : $relationship[EntityMetadata::METADATA_RELATIONSHIP_OUR_FIELD];
+                if (empty($ourField) && $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] == EntityMetadata::RELATIONSHIP_TYPE_MANY_TO_MANY) {
+                    // our field is the join collection field which references the foreign collection
+                    $joinCollection = $relationship[EntityMetadata::METADATA_RELATIONSHIP_JOIN_TABLE];
+                    $childMetadata = $this->metadataProvider->getEntityMetadata($relationship[EntityMetadata::METADATA_ENTITY]);
+                    $ourField = $joinCollection . "." . $childMetadata->getCollection() . "_" . $childMetadata->getPrimaryKey();
+                }
             }
 
             if (empty($ourField)) {
