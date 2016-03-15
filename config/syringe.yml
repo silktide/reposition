@@ -29,7 +29,24 @@ services:
             - %tokenDefinitions%
 
     collectionFactory:
-      class: Silktide\Reposition\Collection\CollectionFactory
+        class: Silktide\Reposition\Collection\CollectionFactory
 
     silktide_reposition.metadataProvider:
-      aliasOf: "@repositoryManager"
+        aliasOf: "@repositoryManager"
+
+#### stub services to be aliased by modules
+
+    defaultEntityFactory:
+        class: Silktide\Reposition\Hydrator\EntityFactoryInterface
+
+    defaultHydrator:
+        class: Silktide\Reposition\Hydrator\HydratorInterface
+
+    defaultMetadataFactory:
+        class: Silktide\Reposition\Metadata\EntityMetadataFactoryInterface
+
+    defaultNormaliser:
+        class: Silktide\Reposition\Normliaser\NormaliserInterface
+
+    defaultStorage:
+        class: Silktide\Reposition\Storage\StorageInterface
