@@ -9,7 +9,7 @@ services:
     queryBuilder:
         class: Silktide\Reposition\QueryBuilder\QueryBuilder
         arguments:
-            - @tokenFactory
+            - "@tokenFactory"
 
     tokenFactory:
       class: Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory
@@ -17,16 +17,16 @@ services:
     repositoryManager:
         class: Silktide\Reposition\Repository\RepositoryManager
         arguments:
-            - @defaultStorage
-            - @queryBuilder
-            - @defaultMetadataFactory
-            - %repository.namespaces%
-            - %repository.instances%
+            - "@defaultStorage"
+            - "@queryBuilder"
+            - "@defaultMetadataFactory"
+            - "%repository.namespaces%"
+            - "%repository.instances%"
 
     tokenParser:
         class: Silktide\Reposition\QueryBuilder\TokenParser
         arguments:
-            - %tokenDefinitions%
+            - "%tokenDefinitions%"
 
     collectionFactory:
         class: Silktide\Reposition\Collection\CollectionFactory
