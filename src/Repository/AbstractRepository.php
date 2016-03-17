@@ -4,6 +4,7 @@ namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Collection\Collection;
 use Silktide\Reposition\Exception\RepositoryException;
+use Silktide\Reposition\Hydrator\EntityFactoryInterface;
 use Silktide\Reposition\QueryBuilder\TokenSequencerInterface;
 use Silktide\Reposition\QueryBuilder\QueryBuilderInterface;
 use Silktide\Reposition\Storage\StorageInterface;
@@ -49,6 +50,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected $metadataProvider;
 
     /**
+     * @var EntityFactoryInterface
+     */
+    protected $entityFactory;
+
+    /**
      * Flag to set if relationships are included by default
      * Alternatively, an array selecting the relationships to include by default
      *
@@ -65,17 +71,20 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     protected $relationshipCascade = [];
 
     /**
+     * AbstractRepository constructor.
      * @param EntityMetadata $entityMetadata
      * @param QueryBuilderInterface $queryBuilder
      * @param StorageInterface $storage
      * @param EntityMetadataProviderInterface $metadataProvider
+     * @param EntityFactoryInterface $entityFactory
      */
-    public function __construct(EntityMetadata $entityMetadata, QueryBuilderInterface $queryBuilder, StorageInterface $storage, EntityMetadataProviderInterface $metadataProvider)
+    public function __construct(EntityMetadata $entityMetadata, QueryBuilderInterface $queryBuilder, StorageInterface $storage, EntityMetadataProviderInterface $metadataProvider, EntityFactoryInterface $entityFactory)
     {
         $this->entityMetadata = $entityMetadata;
         $this->queryBuilder = $queryBuilder;
         $this->storage = $storage;
         $this->metadataProvider = $metadataProvider;
+        $this->entityFactory = $entityFactory;
         $this->configureMetadata();
     }
 
@@ -91,6 +100,16 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
         if (!empty($this->primaryKey)) {
             $this->entityMetadata->setPrimaryKey($this->primaryKey);
         }
+    }
+
+    /**
+     * @param array $data
+     * @return object
+     */
+    public function createEntity($data = [])
+    {
+        $className = $this->entityMetadata->getEntity();
+        return $this->entityFactory->create($className, $data);
     }
 
     /**

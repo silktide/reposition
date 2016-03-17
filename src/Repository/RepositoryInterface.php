@@ -7,6 +7,10 @@ namespace Silktide\Reposition\Repository;
  */
 interface RepositoryInterface 
 {
+    /**
+     * @return object
+     */
+    public function createEntity();
 
     /**
      * @return string

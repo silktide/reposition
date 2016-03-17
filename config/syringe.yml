@@ -22,6 +22,7 @@ services:
             - "@defaultMetadataFactory"
             - "%repository.namespaces%"
             - "%repository.instances%"
+            - "%defaultEntityFactory%"
 
     tokenParser:
         class: Silktide\Reposition\QueryBuilder\TokenParser
