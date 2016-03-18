@@ -47,7 +47,7 @@ services:
         class: Silktide\Reposition\Metadata\EntityMetadataFactoryInterface
 
     defaultNormaliser:
-        class: Silktide\Reposition\Normliaser\NormaliserInterface
+        class: Silktide\Reposition\Normaliser\NormaliserInterface
 
     defaultStorage:
         class: Silktide\Reposition\Storage\StorageInterface
