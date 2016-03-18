@@ -4,6 +4,7 @@ namespace Silktide\Reposition\Repository;
 
 use Silktide\Reposition\Exception\RepositoryException;
 use Silktide\Reposition\Exception\MetadataException;
+use Silktide\Reposition\Hydrator\EntityFactoryInterface;
 use Silktide\Reposition\Storage\StorageInterface;
 use Silktide\Reposition\Metadata\EntityMetadataProviderInterface;
 use Silktide\Reposition\Metadata\EntityMetadataFactoryInterface;
@@ -25,13 +26,23 @@ class RepositoryManager implements EntityMetadataProviderInterface
 
     protected $metadataFactory;
 
-    public function __construct(StorageInterface $storage, QueryBuilderInterface $queryBuilder, EntityMetadataFactoryInterface $metadataFactory, array $repositoryNamespaces, array $repositories = [])
-    {
+    protected $entityFactory;
+
+    public function __construct(
+        StorageInterface $storage,
+        QueryBuilderInterface $queryBuilder,
+        EntityMetadataFactoryInterface $metadataFactory,
+        EntityFactoryInterface $entityFactory,
+        array $repositoryNamespaces,
+        array $repositories = []
+    ) {
         $this->defaultStorage = $storage;
         $this->defaultQueryBuilder = $queryBuilder;
         $this->metadataFactory = $metadataFactory;
+        $this->entityFactory = $entityFactory;
         $this->repositoryNamespaces = $repositoryNamespaces;
         $this->repositoryNamespaces[] = ""; // for classes with no namespace
+
         foreach ($repositories as $repository) {
             $this->addRepository($repository);
         }
@@ -88,7 +99,8 @@ class RepositoryManager implements EntityMetadataProviderInterface
                 $this->metadataFactory->createMetadata($entity),
                 $this->defaultQueryBuilder,
                 $this->defaultStorage,
-                $this
+                $this,
+                $this->entityFactory
             );
         }
         return $this->repositoryCache[$entity];
