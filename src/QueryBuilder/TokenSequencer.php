@@ -7,6 +7,7 @@ use Silktide\Reposition\QueryBuilder\QueryToken\TokenFactory;
 use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 use Silktide\Reposition\Exception\TokenParseException;
 use Silktide\Reposition\Metadata\EntityMetadata;
+use Silktide\Reposition\QueryBuilder\QueryToken\Value;
 
 class TokenSequencer implements TokenSequencerInterface
 {
@@ -415,7 +416,12 @@ class TokenSequencer implements TokenSequencerInterface
 
     public function val($value)
     {
-        $type = strtolower(gettype($value));
+        if ($value instanceof \DateTime) {
+            $type = Value::TYPE_DATETIME;
+        } else {
+            $type = strtolower(gettype($value));
+        }
+
 
         $this->addNewToSequence($type, $value);
         return $this;
