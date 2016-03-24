@@ -15,6 +15,7 @@ class Value extends Token
     const TYPE_BOOLEAN = "boolean";
     const TYPE_NULL = "null";
     const TYPE_ARRAY = "array";
+    const TYPE_DATETIME = "datetime";
 
     /**
      * @var mixed
