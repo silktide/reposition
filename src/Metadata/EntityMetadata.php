@@ -313,7 +313,7 @@ class EntityMetadata
         return empty($this->relationships[$entity])? null: $this->relationships[$entity];
     }
 
-    public function hasRelationShip($entity)
+    public function hasRelationship($entity)
     {
         return !empty($this->relationships[$entity]);
     }

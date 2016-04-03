@@ -552,7 +552,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
         $related = $field;
 
-        if ($query->getEntityMetadata()->hasRelationShip($field)) {
+        if ($query->getEntityMetadata()->hasRelationship($field)) {
             $relationship = $query->getEntityMetadata()->getRelationship($field);
             if (empty($relationship) || $relationship[EntityMetadata::METADATA_RELATIONSHIP_TYPE] == EntityMetadata::RELATIONSHIP_TYPE_ONE_TO_MANY) {
                 $ourField = null;
