@@ -26,6 +26,7 @@ class EntityMetadata
     const METADATA_RELATIONSHIP_JOIN_TABLE = "join table";
     const METADATA_RELATIONSHIP_GETTER = self::METADATA_FIELD_GETTER;
     const METADATA_ENTITY = "entity";
+    const METADATA_ENTITY_SUBCLASS = "subclass";
 
     // field types
     const FIELD_TYPE_STRING = "string";
@@ -254,18 +255,21 @@ class EntityMetadata
         }
 
         $generatedGetter = false;
-        if (!empty($this->entity)) {
+        $subClass = isset($metadata[self::METADATA_ENTITY_SUBCLASS])? $metadata[self::METADATA_ENTITY_SUBCLASS]: "";
+        // if the specified subclass extends this metadata's entity, check the property and getter against that instead
+        $thisEntity = !empty($subClass) && is_subclass_of($subClass, $this->entity)? $subClass: $this->entity;
+        if (!empty($thisEntity)) {
             if (!isset($metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
                 throw new MetadataException("Cannot add relationship metadata for '$entity' without specifying the property of the parent entity that the relationship refers to");
             }
-            if (!property_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
+            if (!property_exists($thisEntity, $metadata[self::METADATA_RELATIONSHIP_PROPERTY])) {
                 throw new MetadataException("Cannot add relationship metadata for '$entity'. The property specified for the parent entity doesn't exist: '{$metadata[self::METADATA_RELATIONSHIP_PROPERTY]}'");
             }
             if (!isset($metadata[self::METADATA_RELATIONSHIP_GETTER])) {
                 $metadata[self::METADATA_RELATIONSHIP_GETTER] = "get" . ucfirst($metadata[self::METADATA_RELATIONSHIP_PROPERTY]);
                 $generatedGetter = true;
             }
-            if (!method_exists($this->entity, $metadata[self::METADATA_RELATIONSHIP_GETTER])) {
+            if (!method_exists($thisEntity, $metadata[self::METADATA_RELATIONSHIP_GETTER])) {
                 throw new MetadataException("Could not find the" . ($generatedGetter? " generated": "") . " getter method '{$metadata[self::METADATA_RELATIONSHIP_GETTER]}' on the entity '{$this->entity}'");
             }
         } else {
