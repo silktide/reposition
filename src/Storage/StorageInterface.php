@@ -17,10 +17,10 @@ interface StorageInterface
 
     /**
      * @param TokenSequencerInterface $query
-     * @param string $entityClass
+     * @param array $options
      * @return object
      */
-    public function query(TokenSequencerInterface $query, $entityClass);
+    public function query(TokenSequencerInterface $query, array $options = ["output" => "normalise"]);
 
     /**
      * @param EntityMetadataProviderInterface $provider

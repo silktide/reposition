@@ -12,19 +12,17 @@ interface HydratorInterface
 
     /**
      * @param array $data
-     * @param string $entityClass
      * @param array $options
      * @return object
      */
-    public function hydrate(array $data, $entityClass, array $options = []);
+    public function hydrate(array $data, array $options = []);
 
     /**
      * @param array $data
-     * @param string $entityClass
      * @param array $options
      * @return array
      */
-    public function hydrateAll(array $data, $entityClass, array $options = []);
+    public function hydrateAll(array $data, array $options = []);
 
     /**
      * @param NormaliserInterface $normaliser
