@@ -167,7 +167,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query->limit($limit);
         }
 
-        return $this->doQuery($query);
+        return $this->doQuery($query, $options);
     }
 
     protected function getFilterQuery(array $filters, $includeRelationships = null)
@@ -190,7 +190,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->save($this->entityMetadata, $options)->entity($entity);
         try {
-            $saveResult = $this->doQuery($query, false);
+            $saveResult = $this->doQuery($query, ["output" => "raw"]);
         } catch (\PDOException $e) {
             $pkMetadata = $this->entityMetadata->getPrimaryKeyMetadata();
             // if this entity has an auto incrementing PK, or the error is not about PK conflicts, re-throw the error
@@ -201,7 +201,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             // this is a duplicate key on a collection with a PK that does not auto increment.
             // force the save to be an update
             $query->setOption("saveType", "update");
-            $saveResult = $this->doQuery($query, false);
+            $saveResult = $this->doQuery($query, ["output" => "raw"]);
         }
 
         // get the primary key value, if there is one, and save it on the entity
@@ -295,7 +295,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 // delete any that have been removed
                 $delete = $this->queryBuilder->delete($childMetadata);
                 $this->createWhereFromFilters($delete, [$childPk => $this->condition("in", $removed)]);
-                $this->doQuery($delete, false);
+                $this->doQuery($delete, ["output" => "raw"]);
             }
         }
 
@@ -326,7 +326,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 ->val($update["value"]);
             $this->createWhereFromFilters($query, [$childPk => $this->condition("in", $update["entities"])]);
 
-            $this->doQuery($query, false);
+            $this->doQuery($query, ["output" => "raw"]);
         }
     }
 
@@ -386,7 +386,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 ];
                 $insert->entity($entityArray);
             }
-            $this->doQuery($insert, false);
+            $this->doQuery($insert, ["output" => "raw"]);
         }
         if (!empty($removed)) {
             $delete = $this->queryBuilder->delete($intermediaryMetadata);
@@ -396,7 +396,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
                 "theirs" => $this->condition("in", $removed)
             ];
             $this->createWhereFromFilters($delete, $filters);
-            $this->doQuery($delete, false);
+            $this->doQuery($delete, ["output" => "raw"]);
         }
     }
 
@@ -424,11 +424,11 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
             $delete = $this->getDeleteQuery($id, $childMetadata, $childField);
 
-            $this->doQuery($delete, false);
+            $this->doQuery($delete, ["output" => "raw"]);
         }
 
         $query = $this->getDeleteQuery($id);
-        return $this->doQuery($query, false);
+        return $this->doQuery($query, ["output" => "raw"]);
     }
 
     protected function getDeleteQuery($value, EntityMetadata $metadata = null, $field = null)
@@ -450,7 +450,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
     {
         $query = $this->queryBuilder->delete($this->entityMetadata);
         $this->createWhereFromFilters($query, $filters);
-        return $this->doQuery($query, false);
+        return $this->doQuery($query, ["output" => "raw"]);
     }
 
     /**
@@ -466,7 +466,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $query->group($groupBy);
         }
 
-        return $this->doQuery($query, false);
+        return $this->doQuery($query, ["output" => "raw"]);
     }
 
     public function condition($operator, $value, $inverted = false)
@@ -486,14 +486,23 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
 
     /**
      * @param TokenSequencerInterface $query
-     * @param bool $createEntity
+     * @param array $options
+     * @return array|object
      *
-     * @return object|array
      */
-    protected function doQuery(TokenSequencerInterface $query, $createEntity = true)
+    protected function doQuery(TokenSequencerInterface $query, array $options = ["output" => "applyModel"])
     {
+        // normalise output option
+        if (!isset($options["output"]) || !in_array($options["output"], ["raw", "normalise"])) {
+            $options["output"] = "applyModel";
+        }
+        // add the entity class if required
+        if ($options["output"] == "applyModel" && empty($options["entityClass"])) {
+            $options["entityClass"] = $this->getEntityName();
+        }
+
         $query->resetSequence();
-        return $this->storage->query($query, $createEntity? $this->getEntityName(): "");
+        return $this->storage->query($query, $options);
     }
 
     protected function createWhereFromFilters(TokenSequencerInterface $query, array $filters, $prefixFieldsWithCollection = false, $startWithWhere = true)
