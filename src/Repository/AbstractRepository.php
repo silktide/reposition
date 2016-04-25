@@ -497,7 +497,7 @@ abstract class AbstractRepository implements RepositoryInterface, MetadataReposi
             $options["output"] = "applyModel";
         }
         // add the entity class if required
-        if ($options["output"] == "applyModel" && empty($options["entityClass"])) {
+        if ($options["output"] != "raw" && empty($options["entityClass"])) {
             $options["entityClass"] = $this->getEntityName();
         }
 
