@@ -5,6 +5,7 @@ namespace Silktide\Reposition\QueryBuilder;
 use Silktide\Reposition\Exception\TokenDefinitionException;
 use Silktide\Reposition\Exception\TokenParseException;
 use Silktide\Reposition\QueryBuilder\QueryToken\Value;
+use Silktide\Reposition\QueryBuilder\QueryToken\Token;
 
 class TokenParser 
 {
@@ -102,7 +103,7 @@ class TokenParser
                 throw new TokenDefinitionException("Error defining token #$i of '$type'. Definition does not contain any token constraints");
             }
         }
-        // done validating, add the definintion
+        // done validating, add the definition
         $this->definitions[$type] = $definition;
     }
 
@@ -133,7 +134,7 @@ class TokenParser
                 }
                 $optional = false;
             }
-            $count = 0;
+
             $e = null;
             $definitionType = "";
             $definitionValue = "";
@@ -176,14 +177,16 @@ class TokenParser
                     }
                 }
             }
-            // handle cases where the definition has no constraints  and where the
+            // handle cases where the definition has no constraints or didn't match any of its multiple constraints and
+            // is not optional
             if (empty($definitionType)) {
                 if (empty($f)) {
                     throw new TokenDefinitionException("Cannot parse sequence, definition for '$type' does not define any constraints");
                 } elseif (!$optional) {
                     throw new TokenParseException("Did not match any of the constraints defined in '$type'");
                 } else {
-                    return $position;
+                    // this definition was optional but did not match anything. Check the next definition.
+                    continue;
                 }
             }
 
@@ -223,6 +226,7 @@ class TokenParser
                 ++$position;
                 break;
             case "value":
+                /** @var Value $token */
                 if (!$token instanceof Value || $token->getValue() != $value) {
                     throw new TokenParseException("Expecting a token of value '$value'." . ($token instanceof Value? " Found '{$token->getValue()}'.": " No token value found."));
                 }
