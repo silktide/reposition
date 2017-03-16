@@ -147,7 +147,7 @@ class TokenSequencer implements TokenSequencerInterface
             case "count":
             case "total":
             case "maximum":
-            case "mininum":
+            case "minimum":
             case "average":
                 $this->func($type, $values);
                 break;
