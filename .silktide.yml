@@ -3,4 +3,5 @@ app: reposition
 type: library
 source: open
 language: php
+protected: false
 ...
